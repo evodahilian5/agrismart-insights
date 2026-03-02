@@ -1,0 +1,97 @@
+export type Lang = 'fr' | 'en';
+
+const t: Record<string, Record<Lang, string>> = {
+  // Nav
+  'nav.dashboard': { fr: 'Tableau de bord', en: 'Dashboard' },
+  'nav.analysis': { fr: 'Analyse des sols', en: 'Soil Analysis' },
+  'nav.market': { fr: 'Marché', en: 'Market' },
+  'nav.about': { fr: 'À propos', en: 'About' },
+  'nav.contact': { fr: 'Contact', en: 'Contact' },
+  'nav.login': { fr: 'Connexion', en: 'Login' },
+  'nav.logout': { fr: 'Déconnexion', en: 'Logout' },
+  'nav.signup': { fr: 'Inscription', en: 'Sign up' },
+  // Landing
+  'landing.title': { fr: 'Agriculture Intelligente,\nRésultats Concrets', en: 'Smart Agriculture,\nConcrete Results' },
+  'landing.subtitle': { fr: 'Analysez vos sols, optimisez vos cultures et connectez-vous au marché agricole grâce à l\'intelligence artificielle.', en: 'Analyze your soil, optimize your crops and connect to the agricultural market with artificial intelligence.' },
+  'landing.farmer': { fr: 'Je suis agriculteur', en: 'I\'m a farmer' },
+  'landing.company': { fr: 'Je suis une entreprise', en: 'I\'m a company' },
+  'landing.feature1.title': { fr: 'Analyse des Sols', en: 'Soil Analysis' },
+  'landing.feature1.desc': { fr: 'Tracez votre parcelle sur la carte et obtenez une analyse complète des propriétés physiques et chimiques de votre sol.', en: 'Draw your plot on the map and get a complete analysis of your soil\'s physical and chemical properties.' },
+  'landing.feature2.title': { fr: 'Recommandations IA', en: 'AI Recommendations' },
+  'landing.feature2.desc': { fr: 'Recevez des recommandations de cultures, d\'intrants et d\'irrigation basées sur vos données de sol et la météo en temps réel.', en: 'Receive crop, input and irrigation recommendations based on your soil data and real-time weather.' },
+  'landing.feature3.title': { fr: 'Marché Agricole', en: 'Agri Market' },
+  'landing.feature3.desc': { fr: 'Publiez vos récoltes, trouvez des acheteurs et rejoignez la plus grande communauté agricole digitale.', en: 'Publish your harvests, find buyers and join the largest digital agricultural community.' },
+  // Auth
+  'auth.login': { fr: 'Connexion', en: 'Login' },
+  'auth.signup': { fr: 'Créer un compte', en: 'Create account' },
+  'auth.name': { fr: 'Nom complet', en: 'Full name' },
+  'auth.email': { fr: 'Email', en: 'Email' },
+  'auth.password': { fr: 'Mot de passe', en: 'Password' },
+  'auth.country': { fr: 'Pays', en: 'Country' },
+  'auth.role': { fr: 'Je suis', en: 'I am' },
+  'auth.farmer': { fr: 'Agriculteur', en: 'Farmer' },
+  'auth.company': { fr: 'Entreprise', en: 'Company' },
+  'auth.company_name': { fr: 'Nom de l\'entreprise', en: 'Company name' },
+  'auth.crop_needed': { fr: 'Culture recherchée', en: 'Crop needed' },
+  'auth.volume': { fr: 'Volume souhaité (tonnes)', en: 'Desired volume (tons)' },
+  'auth.no_account': { fr: 'Pas de compte ?', en: 'No account?' },
+  'auth.has_account': { fr: 'Déjà un compte ?', en: 'Already have an account?' },
+  // Soil Analysis
+  'soil.title': { fr: 'Analyse des Sols', en: 'Soil Analysis' },
+  'soil.draw': { fr: 'Tracez votre parcelle sur la carte', en: 'Draw your plot on the map' },
+  'soil.search': { fr: 'Rechercher un lieu...', en: 'Search a location...' },
+  'soil.parcel_name': { fr: 'Nom de la parcelle', en: 'Plot name' },
+  'soil.analyze': { fr: 'Analyser ma parcelle', en: 'Analyze my plot' },
+  'soil.analyzing': { fr: 'Analyse en cours...', en: 'Analysis in progress...' },
+  'soil.area': { fr: 'Surface', en: 'Area' },
+  'soil.chemical': { fr: 'Propriétés Chimiques', en: 'Chemical Properties' },
+  'soil.physical': { fr: 'Propriétés Physiques', en: 'Physical Properties' },
+  'soil.weather': { fr: 'Données Météorologiques', en: 'Weather Data' },
+  'soil.forecast': { fr: 'Prévisions 5 jours', en: '5-Day Forecast' },
+  'soil.crop_check': { fr: 'Vérifier la compatibilité', en: 'Check compatibility' },
+  'soil.crop_input': { fr: 'Entrez le nom d\'une culture', en: 'Enter a crop name' },
+  'soil.compatibility': { fr: 'Compatibilité', en: 'Compatibility' },
+  'soil.recommendations': { fr: 'Recommandations', en: 'Recommendations' },
+  'soil.download_pdf': { fr: 'Télécharger en PDF', en: 'Download as PDF' },
+  'soil.save_dashboard': { fr: 'Sauvegarder dans le tableau de bord', en: 'Save to dashboard' },
+  'soil.alternatives': { fr: 'Cultures alternatives recommandées', en: 'Recommended alternative crops' },
+  // Dashboard
+  'dash.title': { fr: 'Tableau de Bord', en: 'Dashboard' },
+  'dash.parcels': { fr: 'Mes Parcelles', en: 'My Plots' },
+  'dash.no_parcels': { fr: 'Aucune parcelle analysée. Commencez par ajouter une parcelle !', en: 'No analyzed plots. Start by adding a plot!' },
+  'dash.add': { fr: 'Ajouter une parcelle', en: 'Add a plot' },
+  'dash.soil_score': { fr: 'Score Santé Sol', en: 'Soil Health Score' },
+  'dash.yield': { fr: 'Rendement estimé', en: 'Estimated yield' },
+  'dash.water': { fr: 'Besoin en eau', en: 'Water need' },
+  'dash.revenue': { fr: 'Revenu potentiel', en: 'Potential revenue' },
+  // Market
+  'market.title': { fr: 'Marché', en: 'Market' },
+  'market.home': { fr: 'Accueil', en: 'Home' },
+  'market.messages': { fr: 'Messages', en: 'Messages' },
+  'market.profile': { fr: 'Profil', en: 'Profile' },
+  'market.videos': { fr: 'Vidéos', en: 'Videos' },
+  'market.search': { fr: 'Rechercher', en: 'Search' },
+  'market.create_post': { fr: 'Publier', en: 'Post' },
+  'market.harvest': { fr: 'Récolte', en: 'Harvest' },
+  'market.sale': { fr: 'Vente', en: 'Sale' },
+  'market.buyer': { fr: 'Acheteur', en: 'Buyer' },
+  'market.innovation': { fr: 'Innovation', en: 'Innovation' },
+  'market.like': { fr: 'J\'aime', en: 'Like' },
+  'market.comment': { fr: 'Commenter', en: 'Comment' },
+  'market.interested': { fr: 'Intéressé', en: 'Interested' },
+  // About
+  'about.title': { fr: 'À Propos', en: 'About Us' },
+  'about.mission': { fr: 'Notre Mission', en: 'Our Mission' },
+  'about.vision': { fr: 'Notre Vision', en: 'Our Vision' },
+  // Contact
+  'contact.title': { fr: 'Contactez-nous', en: 'Contact Us' },
+  'contact.send': { fr: 'Envoyer', en: 'Send' },
+  'contact.message': { fr: 'Votre message', en: 'Your message' },
+  'contact.subject': { fr: 'Sujet', en: 'Subject' },
+};
+
+export function useT(lang: Lang) {
+  return (key: string): string => t[key]?.[lang] ?? key;
+}
+
+export default t;
