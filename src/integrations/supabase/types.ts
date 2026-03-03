@@ -14,7 +14,124 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      market_posts: {
+        Row: {
+          author_avatar: string
+          author_location: string
+          author_name: string
+          author_role: string
+          comments_count: number
+          created_at: string
+          description: string
+          hashtags: string[] | null
+          id: string
+          image_url: string | null
+          likes_count: number
+          sale_crop: string | null
+          sale_price: string | null
+          sale_volume: string | null
+          type: Database["public"]["Enums"]["post_type"]
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          author_avatar?: string
+          author_location?: string
+          author_name: string
+          author_role?: string
+          comments_count?: number
+          created_at?: string
+          description: string
+          hashtags?: string[] | null
+          id?: string
+          image_url?: string | null
+          likes_count?: number
+          sale_crop?: string | null
+          sale_price?: string | null
+          sale_volume?: string | null
+          type?: Database["public"]["Enums"]["post_type"]
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          author_avatar?: string
+          author_location?: string
+          author_name?: string
+          author_role?: string
+          comments_count?: number
+          created_at?: string
+          description?: string
+          hashtags?: string[] | null
+          id?: string
+          image_url?: string | null
+          likes_count?: number
+          sale_crop?: string | null
+          sale_price?: string | null
+          sale_volume?: string | null
+          type?: Database["public"]["Enums"]["post_type"]
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      post_likes: {
+        Row: {
+          created_at: string
+          id: string
+          post_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          post_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          post_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "post_likes_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "market_posts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      post_saves: {
+        Row: {
+          created_at: string
+          id: string
+          post_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          post_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          post_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "post_saves_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "market_posts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
@@ -23,7 +140,7 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      [_ in never]: never
+      post_type: "harvest" | "sale" | "buyer" | "innovation"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +267,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      post_type: ["harvest", "sale", "buyer", "innovation"],
+    },
   },
 } as const
