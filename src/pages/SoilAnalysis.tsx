@@ -3,7 +3,6 @@ import { useApp } from '@/contexts/AppContext';
 import { fetchSoilData, SoilData } from '@/lib/soilgrids';
 import { fetchCurrentWeather, fetchForecast, CurrentWeather, ForecastDay, estimateAnnualRainfall } from '@/lib/weather';
 import { crops, calculateCompatibility, getTopCompatibleCrops, CropRequirement } from '@/lib/ecocrop';
-import GlassCard from '@/components/GlassCard';
 import L from 'leaflet';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, RadarChart, Radar, PolarGrid, PolarAngleAxis, PolarRadiusAxis, LineChart, Line, Legend, PieChart, Pie, Cell } from 'recharts';
 import { Search, Download, Save, Loader2, Droplets, Thermometer, Wind, CloudRain, Leaf, AlertTriangle, CheckCircle2, XCircle } from 'lucide-react';
@@ -12,10 +11,7 @@ import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
 import 'leaflet/dist/leaflet.css';
 
-interface LatLngPoint {
-  lat: number;
-  lng: number;
-}
+interface LatLngPoint { lat: number; lng: number; }
 
 function LeafletMap({ positions, setPositions, center }: { positions: LatLngPoint[]; setPositions: (p: LatLngPoint[]) => void; center: [number, number] }) {
   const mapRef = useRef<L.Map | null>(null);
@@ -30,12 +26,10 @@ function LeafletMap({ positions, setPositions, center }: { positions: LatLngPoin
     const map = L.map(containerRef.current, { scrollWheelZoom: true }).setView(center, 6);
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '© OpenStreetMap' }).addTo(map);
     mapRef.current = map;
-
     map.on('click', (e: L.LeafletMouseEvent) => {
       const newPos = [...positionsRef.current, { lat: e.latlng.lat, lng: e.latlng.lng }];
       setPositions(newPos);
     });
-
     return () => { map.remove(); mapRef.current = null; };
   }, []);
 
@@ -71,7 +65,41 @@ function calculateArea(positions: LatLngPoint[]): number {
     area += dlng * (2 + Math.sin(lat1) + Math.sin(lat2));
   }
   area = Math.abs(area * 6371000 * 6371000 / 2);
-  return Math.round(area / 10000 * 100) / 100; // hectares
+  return Math.round(area / 10000 * 100) / 100;
+}
+
+// Liquid glass mini tablet for a single property
+function GlassTablet({ label, value, unit, icon: Icon, color = 'text-green-accent' }: { label: string; value: string | number; unit?: string; icon?: any; color?: string }) {
+  return (
+    <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.3 }}
+      className="liquid-glass-card rounded-2xl p-4 flex flex-col gap-1 hover:scale-[1.02] transition-transform duration-300">
+      <div className="flex items-center justify-between">
+        <span className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">{label}</span>
+        {Icon && <Icon className={`w-4 h-4 ${color}`} />}
+      </div>
+      <div className="flex items-baseline gap-1">
+        <span className="text-2xl font-black text-foreground">{typeof value === 'number' ? value.toFixed(2) : value}</span>
+        {unit && <span className="text-xs text-muted-foreground font-medium">{unit}</span>}
+      </div>
+    </motion.div>
+  );
+}
+
+// Weather liquid glass tablet
+function WeatherTablet({ icon: Icon, label, value, sub }: { icon: any; label: string; value: string; sub: string }) {
+  return (
+    <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
+      className="liquid-glass-card rounded-2xl p-4 hover:scale-[1.02] transition-transform duration-300">
+      <div className="flex items-center gap-2 mb-2">
+        <div className="w-8 h-8 rounded-xl liquid-glass flex items-center justify-center">
+          <Icon className="w-4 h-4 text-green-accent" />
+        </div>
+        <span className="text-[11px] text-muted-foreground font-medium uppercase tracking-wider">{label}</span>
+      </div>
+      <div className="text-xl font-black text-foreground">{value}</div>
+      <div className="text-[11px] text-muted-foreground mt-1">{sub}</div>
+    </motion.div>
+  );
 }
 
 const CHART_COLORS = ['#2FA36B', '#0E3B2E', '#4ADE80', '#16A34A', '#15803D', '#166534', '#BBF7D0', '#86EFAC'];
@@ -101,27 +129,16 @@ export default function SoilAnalysis() {
     setLoading(true);
     const lat = center[0], lon = center[1];
     try {
-      const [soil, w, fc] = await Promise.all([
-        fetchSoilData(lat, lon),
-        fetchCurrentWeather(lat, lon),
-        fetchForecast(lat, lon),
-      ]);
-      setSoilData(soil);
-      setWeather(w);
-      setForecast(fc);
-
+      const [soil, w, fc] = await Promise.all([fetchSoilData(lat, lon), fetchCurrentWeather(lat, lon), fetchForecast(lat, lon)]);
+      setSoilData(soil); setWeather(w); setForecast(fc);
       const annualRain = estimateAnnualRainfall(fc);
       const tops = getTopCompatibleCrops(
         { ph: soil.ph, clay: soil.clay, sand: soil.sand, soc: soil.soc, nitrogen: soil.nitrogen, phosphorus: soil.phosphorus, potassium: soil.potassium },
         { temp: w.temp, rain: annualRain }, 5
       );
-      setTopCrops(tops);
-      setStep('results');
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setLoading(false);
-    }
+      setTopCrops(tops); setStep('results');
+    } catch (err) { console.error(err); }
+    finally { setLoading(false); }
   };
 
   const checkCrop = () => {
@@ -137,23 +154,11 @@ export default function SoilAnalysis() {
       { ph: soilData.ph, clay: soilData.clay, sand: soilData.sand, soc: soilData.soc, nitrogen: soilData.nitrogen, phosphorus: soilData.phosphorus, potassium: soilData.potassium },
       { temp: weather.temp, rain: annualRain }
     );
-    setCompatibility(result);
-    setStep('crop');
+    setCompatibility(result); setStep('crop');
   };
 
   const saveToDashboard = () => {
-    addParcel({
-      id: crypto.randomUUID(),
-      name: parcelName || `Parcelle ${new Date().toLocaleDateString()}`,
-      area,
-      lat: center[0],
-      lon: center[1],
-      soilData,
-      weatherData: weather,
-      forecastData: forecast,
-      cropAnalysis: compatibility ? { crop: selectedCrop, ...compatibility } : undefined,
-      createdAt: new Date().toISOString(),
-    });
+    addParcel({ id: crypto.randomUUID(), name: parcelName || `Parcelle ${new Date().toLocaleDateString()}`, area, lat: center[0], lon: center[1], soilData, weatherData: weather, forecastData: forecast, cropAnalysis: compatibility ? { crop: selectedCrop, ...compatibility } : undefined, createdAt: new Date().toISOString() });
   };
 
   const downloadPDF = async () => {
@@ -165,31 +170,21 @@ export default function SoilAnalysis() {
     const h = (canvas.height * w) / canvas.width;
     let yPos = 0;
     const pageH = pdf.internal.pageSize.getHeight();
-    while (yPos < h) {
-      if (yPos > 0) pdf.addPage();
-      pdf.addImage(imgData, 'PNG', 0, -yPos, w, h);
-      yPos += pageH;
-    }
+    while (yPos < h) { if (yPos > 0) pdf.addPage(); pdf.addImage(imgData, 'PNG', 0, -yPos, w, h); yPos += pageH; }
     pdf.save(`AgriSmartConnect_${parcelName || 'analysis'}.pdf`);
   };
 
   const resetDraw = () => {
-    setPositions([]);
-    setSoilData(null);
-    setWeather(null);
-    setForecast([]);
-    setCompatibility(null);
-    setSelectedCrop(null);
-    setStep('draw');
+    setPositions([]); setSoilData(null); setWeather(null); setForecast([]); setCompatibility(null); setSelectedCrop(null); setStep('draw');
   };
 
   const chemicalData = soilData ? [
-    { name: 'pH', value: soilData.ph, unit: '' },
-    { name: lang === 'fr' ? 'Carbone Org.' : 'Org. Carbon', value: soilData.soc, unit: 'g/kg' },
-    { name: lang === 'fr' ? 'Azote' : 'Nitrogen', value: soilData.nitrogen, unit: 'g/kg' },
-    { name: lang === 'fr' ? 'Phosphore' : 'Phosphorus', value: soilData.phosphorus, unit: 'mg/kg' },
-    { name: lang === 'fr' ? 'Potassium' : 'Potassium', value: soilData.potassium, unit: 'mg/kg' },
-    { name: 'CEC', value: soilData.cec, unit: 'cmol/kg' },
+    { name: 'pH', value: soilData.ph, unit: '', icon: Leaf },
+    { name: lang === 'fr' ? 'Carbone Org.' : 'Org. Carbon', value: soilData.soc, unit: 'g/kg', icon: Leaf },
+    { name: lang === 'fr' ? 'Azote' : 'Nitrogen', value: soilData.nitrogen, unit: 'g/kg', icon: Leaf },
+    { name: lang === 'fr' ? 'Phosphore' : 'Phosphorus', value: soilData.phosphorus, unit: 'mg/kg', icon: Leaf },
+    { name: lang === 'fr' ? 'Potassium' : 'Potassium', value: soilData.potassium, unit: 'mg/kg', icon: Leaf },
+    { name: 'CEC', value: soilData.cec, unit: 'cmol/kg', icon: Leaf },
   ] : [];
 
   const physicalData = soilData ? [
@@ -220,32 +215,27 @@ export default function SoilAnalysis() {
         {/* Map + Controls */}
         <div className="grid lg:grid-cols-3 gap-6 mb-8">
           <div className="lg:col-span-2">
-            <GlassCard variant="strong" className="p-2 h-[500px] relative">
+            <div className="liquid-glass-card rounded-3xl p-2 h-[500px] relative">
               <LeafletMap positions={positions} setPositions={setPositions} center={center} />
-            </GlassCard>
+            </div>
           </div>
-
           <div className="space-y-4">
-            <GlassCard variant="strong">
+            <div className="liquid-glass-card rounded-2xl p-5">
               <label className="text-sm font-semibold text-foreground block mb-2">{t('soil.parcel_name')}</label>
               <input type="text" value={parcelName} onChange={e => setParcelName(e.target.value)}
                 className="w-full px-3 py-2 rounded-xl bg-background/50 border border-border text-sm text-foreground outline-none focus:ring-2 focus:ring-green-accent/50" />
-            </GlassCard>
-
-            <GlassCard variant="strong">
+            </div>
+            <div className="liquid-glass-card rounded-2xl p-5">
               <div className="text-sm text-muted-foreground mb-1">{t('soil.area')}</div>
               <div className="text-2xl font-bold text-foreground">{area > 0 ? `${area} ha` : '—'}</div>
               <div className="text-xs text-muted-foreground mt-1">{positions.length} points</div>
-            </GlassCard>
-
+            </div>
             <div className="flex gap-2">
               <button onClick={analyze} disabled={positions.length < 3 || loading}
                 className="flex-1 py-3 rounded-xl text-sm font-bold bg-green-gradient text-primary-foreground disabled:opacity-50 hover:opacity-90 transition-all flex items-center justify-center gap-2">
                 {loading ? <><Loader2 className="w-4 h-4 animate-spin" />{t('soil.analyzing')}</> : t('soil.analyze')}
               </button>
-              <button onClick={resetDraw} className="px-4 py-3 rounded-xl text-sm font-medium bg-secondary text-secondary-foreground hover:bg-secondary/80 transition-colors">
-                Reset
-              </button>
+              <button onClick={resetDraw} className="px-4 py-3 rounded-xl text-sm font-medium bg-secondary text-secondary-foreground hover:bg-secondary/80 transition-colors">Reset</button>
             </div>
           </div>
         </div>
@@ -254,34 +244,33 @@ export default function SoilAnalysis() {
         <AnimatePresence>
           {step !== 'draw' && soilData && weather && (
             <motion.div ref={resultsRef} initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>
-              {/* Chemical Properties */}
+
+              {/* Chemical Properties — Glass Tablets */}
               <h2 className="text-2xl font-bold text-foreground mb-4 flex items-center gap-2">
                 <Leaf className="w-5 h-5 text-green-accent" /> {t('soil.chemical')}
               </h2>
-              <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 mb-8">
                 {chemicalData.map((d, i) => (
-                  <GlassCard key={i} variant="strong" className="p-4">
-                    <div className="text-sm text-muted-foreground">{d.name}</div>
-                    <div className="text-2xl font-bold text-foreground">{typeof d.value === 'number' ? d.value.toFixed(2) : d.value} <span className="text-sm text-muted-foreground">{d.unit}</span></div>
-                  </GlassCard>
+                  <GlassTablet key={i} label={d.name} value={d.value} unit={d.unit} icon={d.icon} />
                 ))}
               </div>
 
+              {/* Charts */}
               <div className="grid lg:grid-cols-2 gap-6 mb-8">
-                <GlassCard variant="strong">
+                <div className="liquid-glass-card rounded-3xl p-6">
                   <h3 className="text-lg font-bold text-foreground mb-4">{t('soil.chemical')}</h3>
                   <ResponsiveContainer width="100%" height={300}>
                     <BarChart data={chemicalData}>
                       <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
                       <XAxis dataKey="name" tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }} />
                       <YAxis tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }} />
-                      <Tooltip contentStyle={{ background: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: '12px' }} />
+                      <Tooltip contentStyle={{ background: 'hsla(0,0%,100%,0.1)', backdropFilter: 'blur(20px)', border: '0.5px solid hsla(0,0%,100%,0.15)', borderRadius: '16px', color: 'hsl(var(--foreground))' }} />
                       <Bar dataKey="value" fill="#2FA36B" radius={[8, 8, 0, 0]} />
                     </BarChart>
                   </ResponsiveContainer>
-                </GlassCard>
+                </div>
 
-                <GlassCard variant="strong">
+                <div className="liquid-glass-card rounded-3xl p-6">
                   <h3 className="text-lg font-bold text-foreground mb-4">{t('soil.physical')} — Texture</h3>
                   <ResponsiveContainer width="100%" height={300}>
                     <PieChart>
@@ -291,59 +280,47 @@ export default function SoilAnalysis() {
                       <Tooltip />
                     </PieChart>
                   </ResponsiveContainer>
-                </GlassCard>
+                </div>
               </div>
 
-              {/* Physical Properties */}
+              {/* Physical Properties — Glass Tablets */}
               <h2 className="text-2xl font-bold text-foreground mb-4">{t('soil.physical')}</h2>
-              <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 mb-8">
                 {physicalData.map((d, i) => (
-                  <GlassCard key={i} variant="strong" className="p-4">
-                    <div className="text-sm text-muted-foreground">{d.name}</div>
-                    <div className="text-2xl font-bold text-foreground">{d.value.toFixed(2)} <span className="text-sm text-muted-foreground">{d.unit}</span></div>
-                  </GlassCard>
+                  <GlassTablet key={i} label={d.name} value={d.value} unit={d.unit} />
                 ))}
               </div>
 
-              {/* Weather */}
+              {/* Weather — Liquid Glass Tablets */}
               <h2 className="text-2xl font-bold text-foreground mb-4 flex items-center gap-2">
                 <CloudRain className="w-5 h-5 text-green-accent" /> {t('soil.weather')}
               </h2>
-              <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-                {[
-                  { icon: Thermometer, label: lang === 'fr' ? 'Température' : 'Temperature', value: `${weather.temp.toFixed(1)}°C`, sub: `Ressenti: ${weather.feels_like.toFixed(1)}°C` },
-                  { icon: Droplets, label: lang === 'fr' ? 'Humidité' : 'Humidity', value: `${weather.humidity}%`, sub: `Pression: ${weather.pressure} hPa` },
-                  { icon: Wind, label: lang === 'fr' ? 'Vent' : 'Wind', value: `${weather.wind_speed} m/s`, sub: `Direction: ${weather.wind_deg}°` },
-                  { icon: CloudRain, label: lang === 'fr' ? 'Nuages' : 'Clouds', value: `${weather.clouds}%`, sub: weather.description },
-                ].map((w, i) => (
-                  <GlassCard key={i} variant="strong" className="p-4">
-                    <w.icon className="w-5 h-5 text-green-accent mb-2" />
-                    <div className="text-sm text-muted-foreground">{w.label}</div>
-                    <div className="text-xl font-bold text-foreground">{w.value}</div>
-                    <div className="text-xs text-muted-foreground mt-1">{w.sub}</div>
-                  </GlassCard>
-                ))}
+              <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
+                <WeatherTablet icon={Thermometer} label={lang === 'fr' ? 'Température' : 'Temperature'} value={`${weather.temp.toFixed(1)}°C`} sub={`${lang === 'fr' ? 'Ressenti' : 'Feels like'}: ${weather.feels_like.toFixed(1)}°C`} />
+                <WeatherTablet icon={Droplets} label={lang === 'fr' ? 'Humidité' : 'Humidity'} value={`${weather.humidity}%`} sub={`${lang === 'fr' ? 'Pression' : 'Pressure'}: ${weather.pressure} hPa`} />
+                <WeatherTablet icon={Wind} label={lang === 'fr' ? 'Vent' : 'Wind'} value={`${weather.wind_speed} m/s`} sub={`Direction: ${weather.wind_deg}°`} />
+                <WeatherTablet icon={CloudRain} label={lang === 'fr' ? 'Nuages' : 'Clouds'} value={`${weather.clouds}%`} sub={weather.description} />
               </div>
 
               {/* Forecast Chart */}
-              <GlassCard variant="strong" className="mb-8">
+              <div className="liquid-glass-card rounded-3xl p-6 mb-8">
                 <h3 className="text-lg font-bold text-foreground mb-4">{t('soil.forecast')}</h3>
                 <ResponsiveContainer width="100%" height={300}>
                   <LineChart data={forecast}>
                     <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
                     <XAxis dataKey="date" tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }} />
                     <YAxis tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }} />
-                    <Tooltip contentStyle={{ background: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: '12px' }} />
+                    <Tooltip contentStyle={{ background: 'hsla(0,0%,100%,0.1)', backdropFilter: 'blur(20px)', border: '0.5px solid hsla(0,0%,100%,0.15)', borderRadius: '16px', color: 'hsl(var(--foreground))' }} />
                     <Legend />
                     <Line type="monotone" dataKey="temp_max" name="Max °C" stroke="#2FA36B" strokeWidth={2} dot={{ r: 4 }} />
                     <Line type="monotone" dataKey="temp_min" name="Min °C" stroke="#0E3B2E" strokeWidth={2} dot={{ r: 4 }} />
                     <Line type="monotone" dataKey="rain" name="Pluie mm" stroke="#4ADE80" strokeWidth={2} dot={{ r: 4 }} />
                   </LineChart>
                 </ResponsiveContainer>
-              </GlassCard>
+              </div>
 
               {/* Crop Compatibility Check */}
-              <GlassCard variant="strong" className="mb-8">
+              <div className="liquid-glass-card rounded-3xl p-6 mb-8">
                 <h3 className="text-lg font-bold text-foreground mb-4">{t('soil.crop_input')}</h3>
                 <div className="flex gap-3 relative">
                   <div className="flex-1 relative">
@@ -351,7 +328,7 @@ export default function SoilAnalysis() {
                       placeholder={t('soil.crop_input')}
                       className="w-full px-4 py-3 rounded-xl bg-background/50 border border-border text-foreground placeholder:text-muted-foreground outline-none focus:ring-2 focus:ring-green-accent/50" />
                     {cropSuggestions.length > 0 && !selectedCrop && (
-                      <div className="absolute top-full left-0 right-0 mt-1 glass-strong rounded-xl overflow-hidden z-10 max-h-48 overflow-y-auto">
+                      <div className="absolute top-full left-0 right-0 mt-1 liquid-glass rounded-xl overflow-hidden z-10 max-h-48 overflow-y-auto">
                         {cropSuggestions.map(([k, c]) => (
                           <button key={k} onClick={() => { setCropQuery(c.name[lang]); }}
                             className="w-full text-left px-4 py-2 text-sm text-foreground hover:bg-secondary/50 transition-colors">
@@ -365,7 +342,7 @@ export default function SoilAnalysis() {
                     {t('soil.crop_check')}
                   </button>
                 </div>
-              </GlassCard>
+              </div>
 
               {/* Compatibility Results */}
               {compatibility && selectedCrop && (
@@ -373,7 +350,7 @@ export default function SoilAnalysis() {
                   <h2 className="text-2xl font-bold text-foreground mb-4">{t('soil.compatibility')} — {selectedCrop.name[lang]}</h2>
 
                   <div className="grid lg:grid-cols-2 gap-6 mb-8">
-                    <GlassCard variant="strong">
+                    <div className="liquid-glass-card rounded-3xl p-6">
                       <div className="text-center mb-4">
                         <div className={`text-5xl font-black ${compatibility.score >= 70 ? 'text-green-accent' : compatibility.score >= 50 ? 'text-gold' : 'text-destructive'}`}>
                           {compatibility.score}%
@@ -397,9 +374,9 @@ export default function SoilAnalysis() {
                           <Radar dataKey="score" stroke="#2FA36B" fill="#2FA36B" fillOpacity={0.3} />
                         </RadarChart>
                       </ResponsiveContainer>
-                    </GlassCard>
+                    </div>
 
-                    <GlassCard variant="strong">
+                    <div className="liquid-glass-card rounded-3xl p-6">
                       <h3 className="text-lg font-bold text-foreground mb-4">{t('soil.recommendations')}</h3>
                       <div className="space-y-3">
                         {[
@@ -411,7 +388,7 @@ export default function SoilAnalysis() {
                           { label: lang === 'fr' ? 'Rendement estimé' : 'Est. yield', value: `${selectedCrop.yield_potential} t/ha`, total: `${(selectedCrop.yield_potential * area).toFixed(1)} t total` },
                           { label: lang === 'fr' ? 'Revenu potentiel' : 'Potential revenue', value: `$${selectedCrop.market_price}/t`, total: `$${(selectedCrop.yield_potential * area * selectedCrop.market_price).toFixed(0)} total` },
                         ].map((r, i) => (
-                          <div key={i} className="flex justify-between items-center py-2 border-b border-border/50 last:border-0">
+                          <div key={i} className="flex justify-between items-center py-2 border-b border-border/30 last:border-0">
                             <span className="text-sm text-muted-foreground">{r.label}</span>
                             <div className="text-right">
                               <span className="text-sm font-bold text-foreground">{r.value}</span>
@@ -420,11 +397,11 @@ export default function SoilAnalysis() {
                           </div>
                         ))}
                       </div>
-                    </GlassCard>
+                    </div>
                   </div>
 
                   {/* Detail table */}
-                  <GlassCard variant="strong" className="mb-8 overflow-x-auto">
+                  <div className="liquid-glass-card rounded-3xl p-6 mb-8 overflow-x-auto">
                     <h3 className="text-lg font-bold text-foreground mb-4">{lang === 'fr' ? 'Détails de compatibilité' : 'Compatibility Details'}</h3>
                     <table className="w-full text-sm">
                       <thead>
@@ -454,18 +431,17 @@ export default function SoilAnalysis() {
                         ))}
                       </tbody>
                     </table>
-                  </GlassCard>
+                  </div>
 
                   {/* Alternatives if low score */}
                   {compatibility.score < 70 && (
-                    <GlassCard variant="strong" className="mb-8">
+                    <div className="liquid-glass-card rounded-3xl p-6 mb-8">
                       <h3 className="text-lg font-bold text-foreground mb-4 flex items-center gap-2">
-                        <Leaf className="w-5 h-5 text-green-accent" />
-                        {t('soil.alternatives')}
+                        <Leaf className="w-5 h-5 text-green-accent" /> {t('soil.alternatives')}
                       </h3>
-                      <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                      <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
                         {topCrops.map((tc, i) => (
-                          <div key={i} className="p-4 rounded-xl bg-secondary/50 border border-border/30">
+                          <div key={i} className="liquid-glass-card rounded-2xl p-4">
                             <div className="flex justify-between items-center mb-2">
                               <span className="font-bold text-foreground">{tc.crop.name[lang]}</span>
                               <span className={`text-sm font-bold ${tc.score >= 70 ? 'text-green-accent' : 'text-gold'}`}>{tc.score}%</span>
@@ -476,26 +452,26 @@ export default function SoilAnalysis() {
                           </div>
                         ))}
                       </div>
-                    </GlassCard>
+                    </div>
                   )}
                 </motion.div>
               )}
 
               {/* Top compatible crops (always shown) */}
               {!compatibility && topCrops.length > 0 && (
-                <GlassCard variant="strong" className="mb-8">
+                <div className="liquid-glass-card rounded-3xl p-6 mb-8">
                   <h3 className="text-lg font-bold text-foreground mb-4">{lang === 'fr' ? 'Cultures les plus compatibles' : 'Most compatible crops'}</h3>
-                  <div className="grid sm:grid-cols-2 lg:grid-cols-5 gap-4">
+                  <div className="grid sm:grid-cols-2 lg:grid-cols-5 gap-3">
                     {topCrops.map((tc, i) => (
                       <button key={i} onClick={() => { setCropQuery(tc.crop.name[lang]); }}
-                        className="p-4 rounded-xl bg-secondary/50 border border-border/30 hover:bg-secondary transition-colors text-left">
+                        className="liquid-glass-card rounded-2xl p-4 hover:scale-[1.02] transition-transform text-left">
                         <div className="text-sm font-bold text-foreground mb-1">{tc.crop.name[lang]}</div>
                         <div className="text-2xl font-black text-green-accent">{tc.score}%</div>
                         <div className="text-xs text-muted-foreground mt-1">{tc.crop.yield_potential} t/ha</div>
                       </button>
                     ))}
                   </div>
-                </GlassCard>
+                </div>
               )}
 
               {/* Actions */}

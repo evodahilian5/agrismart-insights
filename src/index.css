@@ -111,6 +111,27 @@
     box-shadow: 0 8px 32px hsla(0, 0%, 0%, 0.3);
   }
 
+  .liquid-glass {
+    background: hsla(0, 0%, 100%, 0.12);
+    backdrop-filter: blur(50px) saturate(180%);
+    -webkit-backdrop-filter: blur(50px) saturate(180%);
+    border: 0.5px solid hsla(0, 0%, 100%, 0.18);
+    box-shadow:
+      0 8px 40px hsla(0, 0%, 0%, 0.15),
+      inset 0 1px 0 hsla(0, 0%, 100%, 0.15),
+      inset 0 -1px 0 hsla(0, 0%, 0%, 0.05);
+  }
+
+  .liquid-glass-card {
+    background: hsla(0, 0%, 100%, 0.08);
+    backdrop-filter: blur(40px) saturate(160%);
+    -webkit-backdrop-filter: blur(40px) saturate(160%);
+    border: 0.5px solid hsla(0, 0%, 100%, 0.12);
+    box-shadow:
+      0 4px 24px hsla(0, 0%, 0%, 0.1),
+      inset 0 1px 0 hsla(0, 0%, 100%, 0.1);
+  }
+
   .text-gradient {
     background: linear-gradient(135deg, hsl(var(--green-accent)), hsl(var(--green-light)));
     -webkit-background-clip: text;
