@@ -232,7 +232,6 @@ export default function SoilAnalysis() {
               <MapContainer center={center} zoom={6} className="w-full h-full rounded-xl" scrollWheelZoom>
                 <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" attribution="© OpenStreetMap" />
                 <DrawPolygon positions={positions} setPositions={setPositions} />
-                <SearchControl onSelect={(lat, lon) => {}} />
               </MapContainer>
             </GlassCard>
           </div>
