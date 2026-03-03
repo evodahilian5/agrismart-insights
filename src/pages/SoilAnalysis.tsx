@@ -4,8 +4,7 @@ import { fetchSoilData, SoilData } from '@/lib/soilgrids';
 import { fetchCurrentWeather, fetchForecast, CurrentWeather, ForecastDay, estimateAnnualRainfall } from '@/lib/weather';
 import { crops, calculateCompatibility, getTopCompatibleCrops, CropRequirement } from '@/lib/ecocrop';
 import GlassCard from '@/components/GlassCard';
-import { MapContainer, TileLayer, Polygon, useMapEvents, useMap } from 'react-leaflet';
-import { LatLng } from 'leaflet';
+import L from 'leaflet';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, RadarChart, Radar, PolarGrid, PolarAngleAxis, PolarRadiusAxis, LineChart, Line, Legend, PieChart, Pie, Cell } from 'recharts';
 import { Search, Download, Save, Loader2, Droplets, Thermometer, Wind, CloudRain, Leaf, AlertTriangle, CheckCircle2, XCircle } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -13,61 +12,54 @@ import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
 import 'leaflet/dist/leaflet.css';
 
-function DrawPolygon({ positions, setPositions }: { positions: LatLng[]; setPositions: (p: LatLng[]) => void }) {
-  useMapEvents({
-    click(e) {
-      setPositions([...positions, e.latlng]);
-    },
-  });
-  return positions.length >= 3 ? <Polygon positions={positions} pathOptions={{ color: '#2FA36B', fillColor: '#2FA36B', fillOpacity: 0.3 }} /> : null;
+interface LatLngPoint {
+  lat: number;
+  lng: number;
 }
 
-function SearchControl({ onSelect }: { onSelect: (lat: number, lon: number, name: string) => void }) {
-  const map = useMap();
-  const { t } = useApp();
-  const [query, setQuery] = useState('');
-  const [results, setResults] = useState<any[]>([]);
+function LeafletMap({ positions, setPositions, center }: { positions: LatLngPoint[]; setPositions: (p: LatLngPoint[]) => void; center: [number, number] }) {
+  const mapRef = useRef<L.Map | null>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const polygonRef = useRef<L.Polygon | null>(null);
+  const markersRef = useRef<L.CircleMarker[]>([]);
+  const positionsRef = useRef(positions);
+  positionsRef.current = positions;
 
-  const search = async () => {
-    if (!query.trim()) return;
-    try {
-      const resp = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=5`);
-      const data = await resp.json();
-      setResults(data);
-    } catch { /* noop */ }
-  };
+  useEffect(() => {
+    if (!containerRef.current || mapRef.current) return;
+    const map = L.map(containerRef.current, { scrollWheelZoom: true }).setView(center, 6);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '© OpenStreetMap' }).addTo(map);
+    mapRef.current = map;
 
-  return (
-    <div className="absolute top-3 left-3 z-[1000] w-72">
-      <div className="glass-strong rounded-xl overflow-hidden">
-        <div className="flex items-center gap-2 px-3 py-2">
-          <Search className="w-4 h-4 text-muted-foreground" />
-          <input type="text" value={query} onChange={e => setQuery(e.target.value)}
-            onKeyDown={e => e.key === 'Enter' && search()}
-            placeholder={t('soil.search')}
-            className="flex-1 bg-transparent text-sm text-foreground placeholder:text-muted-foreground outline-none" />
-        </div>
-        {results.length > 0 && (
-          <div className="border-t border-border max-h-48 overflow-y-auto">
-            {results.map((r, i) => (
-              <button key={i} onClick={() => {
-                const lat = parseFloat(r.lat), lon = parseFloat(r.lon);
-                map.flyTo([lat, lon], 14);
-                onSelect(lat, lon, r.display_name);
-                setResults([]);
-                setQuery(r.display_name.split(',')[0]);
-              }} className="w-full text-left px-3 py-2 text-xs text-foreground hover:bg-secondary/50 transition-colors truncate">
-                {r.display_name}
-              </button>
-            ))}
-          </div>
-        )}
-      </div>
-    </div>
-  );
+    map.on('click', (e: L.LeafletMouseEvent) => {
+      const newPos = [...positionsRef.current, { lat: e.latlng.lat, lng: e.latlng.lng }];
+      setPositions(newPos);
+    });
+
+    return () => { map.remove(); mapRef.current = null; };
+  }, []);
+
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map) return;
+    markersRef.current.forEach(m => m.remove());
+    markersRef.current = [];
+    if (polygonRef.current) { polygonRef.current.remove(); polygonRef.current = null; }
+    positions.forEach(p => {
+      const marker = L.circleMarker([p.lat, p.lng], { radius: 5, color: '#2FA36B', fillColor: '#2FA36B', fillOpacity: 0.8 }).addTo(map);
+      markersRef.current.push(marker);
+    });
+    if (positions.length >= 3) {
+      polygonRef.current = L.polygon(positions.map(p => [p.lat, p.lng] as [number, number]), {
+        color: '#2FA36B', fillColor: '#2FA36B', fillOpacity: 0.3
+      }).addTo(map);
+    }
+  }, [positions]);
+
+  return <div ref={containerRef} className="w-full h-full rounded-xl" />;
 }
 
-function calculateArea(positions: LatLng[]): number {
+function calculateArea(positions: LatLngPoint[]): number {
   if (positions.length < 3) return 0;
   let area = 0;
   const n = positions.length;
@@ -86,7 +78,7 @@ const CHART_COLORS = ['#2FA36B', '#0E3B2E', '#4ADE80', '#16A34A', '#15803D', '#1
 
 export default function SoilAnalysis() {
   const { t, addParcel, lang } = useApp();
-  const [positions, setPositions] = useState<LatLng[]>([]);
+  const [positions, setPositions] = useState<LatLngPoint[]>([]);
   const [parcelName, setParcelName] = useState('');
   const [loading, setLoading] = useState(false);
   const [soilData, setSoilData] = useState<SoilData | null>(null);
@@ -229,10 +221,7 @@ export default function SoilAnalysis() {
         <div className="grid lg:grid-cols-3 gap-6 mb-8">
           <div className="lg:col-span-2">
             <GlassCard variant="strong" className="p-2 h-[500px] relative">
-              <MapContainer center={center} zoom={6} className="w-full h-full rounded-xl" scrollWheelZoom>
-                <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" attribution="© OpenStreetMap" />
-                <DrawPolygon positions={positions} setPositions={setPositions} />
-              </MapContainer>
+              <LeafletMap positions={positions} setPositions={setPositions} center={center} />
             </GlassCard>
           </div>
 
