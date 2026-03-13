@@ -1,0 +1,243 @@
+// Open-Meteo ERA5 Archive API for climate normals + Nominatim geocoding
+// Sources: ERA5 reanalysis (ECMWF/Copernicus), OpenStreetMap Nominatim
+
+const ARCHIVE_URL = 'https://archive-api.open-meteo.com/v1/archive';
+const NOMINATIM_URL = 'https://nominatim.openstreetmap.org/reverse';
+
+export interface ClimateData {
+  annualRainfall: number;
+  monthlyRain: number[];
+  monthlyETP: number[];
+  waterBalance: number[];
+  deficitMonths: number;
+  wetMonths: number;
+  annualTemp: number;
+  correctedTemp: number;
+  coldestMonthTemp: number;
+  hottestMonthTemp: number;
+  annualHumidity: number;
+  annualSolarRadiation: number;
+  altitude: number;
+  monthlyTemp: number[];
+  isFallback: boolean;
+}
+
+export interface GeoLocation {
+  country: string;
+  countryCode: string;
+  region: string;
+  distanceToCoast: number;
+  currency: string;
+  currencySymbol: string;
+  currencyRate: number;
+}
+
+const CURRENCY_MAP: Record<string, { currency: string; symbol: string; rate: number }> = {
+  MA: { currency: 'MAD', symbol: 'MAD', rate: 10 },
+  SN: { currency: 'FCFA', symbol: 'FCFA', rate: 655 },
+  ML: { currency: 'FCFA', symbol: 'FCFA', rate: 655 },
+  NE: { currency: 'FCFA', symbol: 'FCFA', rate: 655 },
+  BF: { currency: 'FCFA', symbol: 'FCFA', rate: 655 },
+  TG: { currency: 'FCFA', symbol: 'FCFA', rate: 655 },
+  BJ: { currency: 'FCFA', symbol: 'FCFA', rate: 655 },
+  CI: { currency: 'FCFA', symbol: 'FCFA', rate: 655 },
+  GW: { currency: 'FCFA', symbol: 'FCFA', rate: 655 },
+  GH: { currency: 'GHS', symbol: 'GH₵', rate: 15 },
+  NG: { currency: 'NGN', symbol: '₦', rate: 1600 },
+  CM: { currency: 'FCFA', symbol: 'FCFA', rate: 655 },
+  TD: { currency: 'FCFA', symbol: 'FCFA', rate: 655 },
+  CF: { currency: 'FCFA', symbol: 'FCFA', rate: 655 },
+  GA: { currency: 'FCFA', symbol: 'FCFA', rate: 655 },
+  CG: { currency: 'FCFA', symbol: 'FCFA', rate: 655 },
+  GN: { currency: 'GNF', symbol: 'GNF', rate: 8600 },
+  MR: { currency: 'MRU', symbol: 'MRU', rate: 40 },
+};
+
+// Coastal reference points for distance estimation
+const COAST_POINTS = [
+  { lat: 14.7, lng: -17.5 }, { lat: 12.5, lng: -16.6 }, { lat: 11.8, lng: -15.6 },
+  { lat: 9.5, lng: -13.7 }, { lat: 8.5, lng: -13.2 }, { lat: 6.3, lng: -10.8 },
+  { lat: 5.3, lng: -4.0 }, { lat: 5.2, lng: -1.8 }, { lat: 5.6, lng: -0.2 },
+  { lat: 6.1, lng: 1.2 }, { lat: 6.4, lng: 2.6 }, { lat: 6.4, lng: 3.4 },
+  { lat: 4.0, lng: 9.2 }, { lat: 33.6, lng: -7.6 }, { lat: 35.8, lng: -5.8 },
+  { lat: 34.0, lng: -6.8 }, { lat: 32.3, lng: -9.2 }, { lat: 30.4, lng: -9.6 },
+];
+
+function haversineKm(lat1: number, lon1: number, lat2: number, lon2: number): number {
+  const R = 6371;
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLon = (lon2 - lon1) * Math.PI / 180;
+  const a = Math.sin(dLat / 2) ** 2 + Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLon / 2) ** 2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
+
+function estimateCoastDistance(lat: number, lon: number): number {
+  return Math.min(...COAST_POINTS.map(p => haversineKm(lat, lon, p.lat, p.lng)));
+}
+
+export async function fetchClimateNormals(lat: number, lon: number): Promise<ClimateData> {
+  try {
+    const params = new URLSearchParams({
+      latitude: lat.toString(),
+      longitude: lon.toString(),
+      start_date: '2014-01-01',
+      end_date: '2023-12-31',
+      daily: 'precipitation_sum,temperature_2m_mean,temperature_2m_min,temperature_2m_max,et0_fao_evapotranspiration,shortwave_radiation_sum',
+      timezone: 'auto',
+    });
+
+    const resp = await fetch(`${ARCHIVE_URL}?${params}`);
+    if (!resp.ok) throw new Error(`Archive API error: ${resp.status}`);
+    const data = await resp.json();
+
+    const daily = data.daily;
+    const dates = daily.time as string[];
+    const precip = daily.precipitation_sum as (number | null)[];
+    const tempMean = daily.temperature_2m_mean as (number | null)[];
+    const et0 = daily.et0_fao_evapotranspiration as (number | null)[];
+    const solar = daily.shortwave_radiation_sum as (number | null)[];
+
+    // Compute monthly totals/averages across all years
+    const monthlyRainSum = new Array(12).fill(0);
+    const monthlyETPSum = new Array(12).fill(0);
+    const monthlyTempSum = new Array(12).fill(0);
+    const monthlyTempCount = new Array(12).fill(0);
+    const monthlySolarSum = new Array(12).fill(0);
+    const monthlySolarCount = new Array(12).fill(0);
+
+    // Track min monthly temps per month across years for coldest
+    const monthlyTempByYearMonth: Record<string, number[]> = {};
+
+    for (let i = 0; i < dates.length; i++) {
+      const month = parseInt(dates[i].substring(5, 7)) - 1;
+      if (precip[i] != null) monthlyRainSum[month] += precip[i]!;
+      if (et0[i] != null) monthlyETPSum[month] += et0[i]!;
+      if (tempMean[i] != null) {
+        monthlyTempSum[month] += tempMean[i]!;
+        monthlyTempCount[month]++;
+      }
+      if (solar[i] != null) {
+        monthlySolarSum[month] += solar[i]!;
+        monthlySolarCount[month]++;
+      }
+    }
+
+    const years = 10;
+    const monthlyRain = monthlyRainSum.map(t => Math.round(t / years));
+    const monthlyETP = monthlyETPSum.map(t => Math.round(t / years));
+    const monthlyTemp = monthlyTempSum.map((t, i) => monthlyTempCount[i] > 0 ? Math.round(t / monthlyTempCount[i] * 10) / 10 : 25);
+    const waterBalance = monthlyRain.map((r, i) => r - monthlyETP[i]);
+    const deficitMonths = waterBalance.filter(b => b < 0).length;
+    const wetMonths = waterBalance.filter(b => b >= 0).length;
+
+    const altitude = data.elevation ?? 0;
+    const annualTemp = monthlyTemp.reduce((s, t) => s + t, 0) / 12;
+    const correctedTemp = annualTemp - (altitude * 6.5 / 1000);
+    const annualSolarRadiation = monthlySolarCount[0] > 0
+      ? Math.round(monthlySolarSum.reduce((s, t) => s + t, 0) / dates.length * 100) / 100
+      : 18;
+
+    return {
+      annualRainfall: monthlyRain.reduce((s, r) => s + r, 0),
+      monthlyRain,
+      monthlyETP,
+      waterBalance,
+      deficitMonths,
+      wetMonths,
+      annualTemp: Math.round(annualTemp * 10) / 10,
+      correctedTemp: Math.round(correctedTemp * 10) / 10,
+      coldestMonthTemp: Math.min(...monthlyTemp),
+      hottestMonthTemp: Math.max(...monthlyTemp),
+      annualHumidity: 65,
+      annualSolarRadiation,
+      altitude,
+      monthlyTemp,
+      isFallback: false,
+    };
+  } catch (err) {
+    console.error('Climate API failed, using fallback:', err);
+    return getFallbackClimate(lat, lon);
+  }
+}
+
+function getFallbackClimate(lat: number, lon: number): ClimateData {
+  let rainfall = 900, deficit = 4, temp = 27;
+
+  if (lat > 33) { rainfall = 430; deficit = 7; temp = 17; }
+  else if (lat > 30) { rainfall = 280; deficit = 9; temp = 22; }
+  else if (lat > 15) { rainfall = 350; deficit = 9; temp = 28; }
+  else if (lat > 13) { rainfall = 500; deficit = 8; temp = 28; }
+  else if (lat > 9) {
+    if (lon > -5 && lon < 2) { rainfall = 900; deficit = 4; temp = 27; }
+    else { rainfall = 540; deficit = 7; temp = 25; }
+  } else if (lat > 7) { rainfall = 1100; deficit = 4; temp = 26; }
+  else if (lat < 7 && lon > -8 && lon < -3) { rainfall = 1400; deficit = 2; temp = 26; }
+
+  const wet = 12 - deficit;
+  const monthlyRain = Array.from({ length: 12 }, (_, i) => {
+    if (i >= (6 - Math.floor(wet / 2)) && i < (6 + Math.ceil(wet / 2))) return Math.round(rainfall / wet);
+    return Math.round(rainfall * 0.02);
+  });
+  const monthlyETP = new Array(12).fill(Math.round(rainfall / wet * 0.8 + 30));
+  const waterBalance = monthlyRain.map((r, i) => r - monthlyETP[i]);
+  const monthlyTemp = new Array(12).fill(temp);
+
+  return {
+    annualRainfall: rainfall,
+    monthlyRain,
+    monthlyETP,
+    waterBalance,
+    deficitMonths: deficit,
+    wetMonths: wet,
+    annualTemp: temp,
+    correctedTemp: temp,
+    coldestMonthTemp: temp - 3,
+    hottestMonthTemp: temp + 5,
+    annualHumidity: deficit > 6 ? 40 : deficit > 4 ? 60 : 75,
+    annualSolarRadiation: 18,
+    altitude: 0,
+    monthlyTemp,
+    isFallback: true,
+  };
+}
+
+export async function reverseGeocode(lat: number, lon: number): Promise<GeoLocation> {
+  try {
+    const resp = await fetch(`${NOMINATIM_URL}?format=json&lat=${lat}&lon=${lon}&accept-language=fr`, {
+      headers: { 'User-Agent': 'AgriSmartConnect/1.0' },
+    });
+    if (!resp.ok) throw new Error(`Nominatim error: ${resp.status}`);
+    const data = await resp.json();
+
+    const countryCode = (data.address?.country_code || '').toUpperCase();
+    const country = data.address?.country || 'Inconnu';
+    const region = data.address?.state || data.address?.region || '';
+    const distanceToCoast = estimateCoastDistance(lat, lon);
+    const curr = CURRENCY_MAP[countryCode] || { currency: 'USD', symbol: '$', rate: 1 };
+
+    return {
+      country,
+      countryCode,
+      region,
+      distanceToCoast,
+      currency: curr.currency,
+      currencySymbol: curr.symbol,
+      currencyRate: curr.rate,
+    };
+  } catch (err) {
+    console.error('Nominatim failed:', err);
+    const distanceToCoast = estimateCoastDistance(lat, lon);
+    // Guess country from coordinates
+    let cc = 'XX', country = 'Inconnu';
+    if (lat > 27 && lon > -15 && lon < 0) { cc = 'MA'; country = 'Maroc'; }
+    else if (lat > 12 && lat < 17 && lon > -18 && lon < -11) { cc = 'SN'; country = 'Sénégal'; }
+    else if (lat > 6 && lat < 11 && lon > -1 && lon < 2) { cc = 'TG'; country = 'Togo'; }
+    else if (lat > 6 && lat < 12 && lon > 0 && lon < 4) { cc = 'BJ'; country = 'Bénin'; }
+    else if (lat > 4 && lat < 11 && lon > -4 && lon < 1) { cc = 'GH'; country = 'Ghana'; }
+    else if (lat > 4 && lat < 11 && lon > -9 && lon < -2) { cc = 'CI'; country = "Côte d'Ivoire"; }
+    else if (lat > 11 && lat < 17 && lon > 0 && lon < 16) { cc = 'NE'; country = 'Niger'; }
+    else if (lat > 10 && lat < 25 && lon > -12 && lon < 5) { cc = 'ML'; country = 'Mali'; }
+    const curr = CURRENCY_MAP[cc] || { currency: 'USD', symbol: '$', rate: 1 };
+    return { country, countryCode: cc, region: '', distanceToCoast, currency: curr.currency, currencySymbol: curr.symbol, currencyRate: curr.rate };
+  }
+}
