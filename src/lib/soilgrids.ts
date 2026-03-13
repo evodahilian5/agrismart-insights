@@ -1,79 +1,119 @@
+// SoilGrids V2 ISRIC/NASA — Soil property data
+// Source: https://rest.isric.org/soilgrids/v2.0
+// Unit conversions per ISRIC documentation
+
 const SOILGRIDS_BASE = 'https://rest.isric.org/soilgrids/v2.0/properties/query';
 
 export interface SoilData {
-  ph: number;
-  clay: number;
-  sand: number;
-  silt: number;
-  soc: number; // organic carbon g/kg
-  nitrogen: number; // g/kg
-  cec: number; // cmol/kg
-  bdod: number; // bulk density kg/dm³
-  cfvo: number; // coarse fragments %
-  phosphorus: number; // estimated mg/kg
-  potassium: number; // estimated mg/kg
-  ocd: number; // organic carbon density
+  ph: number;           // pH (unitless)
+  clay: number;         // %
+  sand: number;         // %
+  silt: number;         // %
+  soc: number;          // g/kg organic carbon
+  nitrogen: number;     // g/kg
+  nitrogenKgHa: number; // kg/ha (FAO-ISRIC formula)
+  cec: number;          // cmol(c)/kg
+  bdod: number;         // g/cm³ = kg/dm³ (0-30cm)
+  bdodDeep: number;     // g/cm³ (30-60cm, for compaction detection)
+  cfvo: number;         // % coarse fragments
+  ocd: number;          // kg/m³ organic carbon density
+  isReal: boolean;      // true if from API, false if fallback
 }
 
 export async function fetchSoilData(lat: number, lon: number): Promise<SoilData> {
   const properties = ['phh2o', 'clay', 'sand', 'silt', 'soc', 'nitrogen', 'cec', 'bdod', 'cfvo', 'ocd'];
-  const depths = ['0-5cm', '5-15cm', '15-30cm'];
-  const values = ['mean'];
+  const depths = ['0-5cm', '5-15cm', '15-30cm', '30-60cm'];
 
   const params = new URLSearchParams();
   params.set('lat', lat.toString());
   params.set('lon', lon.toString());
   properties.forEach(p => params.append('property', p));
   depths.forEach(d => params.append('depth', d));
-  values.forEach(v => params.append('value', v));
+  params.append('value', 'mean');
 
   try {
     const resp = await fetch(`${SOILGRIDS_BASE}?${params.toString()}`);
     if (!resp.ok) throw new Error(`SoilGrids API error: ${resp.status}`);
     const data = await resp.json();
 
-    const getAvg = (prop: string, divisor = 1): number => {
+    // Get weighted average for 0-30cm (weights: 5/30, 10/30, 15/30)
+    const getWeightedAvg030 = (prop: string): number => {
       const layer = data.properties?.layers?.find((l: any) => l.name === prop);
       if (!layer) return 0;
-      const vals = layer.depths
-        ?.map((d: any) => d.values?.mean)
-        .filter((v: any) => v != null) ?? [];
-      if (vals.length === 0) return 0;
-      return Math.round((vals.reduce((a: number, b: number) => a + b, 0) / vals.length / divisor) * 100) / 100;
+      const depthMap: Record<string, number> = {};
+      layer.depths?.forEach((d: any) => {
+        const label = d.label;
+        const val = d.values?.mean;
+        if (val != null) depthMap[label] = val;
+      });
+      const v05 = depthMap['0-5cm'] ?? null;
+      const v515 = depthMap['5-15cm'] ?? null;
+      const v1530 = depthMap['15-30cm'] ?? null;
+      const vals = [v05, v515, v1530];
+      const weights = [5 / 30, 10 / 30, 15 / 30];
+      let sum = 0, wSum = 0;
+      for (let i = 0; i < 3; i++) {
+        if (vals[i] != null) { sum += vals[i]! * weights[i]; wSum += weights[i]; }
+      }
+      return wSum > 0 ? sum / wSum : 0;
     };
 
-    const ph = getAvg('phh2o', 10); // stored as pH*10
-    const clay = getAvg('clay', 10); // stored as g/kg -> %
-    const sand = getAvg('sand', 10);
-    const silt = getAvg('silt', 10);
-    const soc = getAvg('soc', 1); // g/kg * 10 in API, but let's just use raw
-    const nitrogen = getAvg('nitrogen', 1); // cg/kg
-    const cec = getAvg('cec', 10); // mmol/kg -> cmol/kg
-    const bdod = getAvg('bdod', 100); // cg/cm³ -> kg/dm³
-    const cfvo = getAvg('cfvo', 10); // cm³/dm³ -> %
-    const ocd = getAvg('ocd', 1);
+    // Get value for specific depth
+    const getDepthValue = (prop: string, depth: string): number => {
+      const layer = data.properties?.layers?.find((l: any) => l.name === prop);
+      if (!layer) return 0;
+      const d = layer.depths?.find((d: any) => d.label === depth);
+      return d?.values?.mean ?? 0;
+    };
 
-    // Estimate phosphorus and potassium from CEC and organic carbon
-    const phosphorus = Math.round(soc * 0.8 + Math.random() * 10 + 5);
-    const potassium = Math.round(cec * 8 + Math.random() * 30 + 40);
+    // Conversions per ISRIC documentation:
+    // phh2o: pH × 10 → divide by 10
+    // clay/sand/silt: g/kg → divide by 10 for %
+    // soc: dg/kg → divide by 10 for g/kg
+    // nitrogen: cg/kg → divide by 100 for g/kg
+    // cec: mmol(c)/kg → divide by 10 for cmol(c)/kg
+    // bdod: cg/cm³ → divide by 100 for g/cm³
+    // cfvo: cm³/dm³ → divide by 10 for %
+    // ocd: hg/m³ → divide by 10 for kg/m³
 
-    return { ph, clay, sand, silt, soc: soc / 10, nitrogen: nitrogen / 100, cec, bdod, cfvo, phosphorus, potassium, ocd };
-  } catch (err) {
-    console.error('SoilGrids fetch failed, using simulated data:', err);
-    // Fallback simulated data
+    const ph = getWeightedAvg030('phh2o') / 10;
+    const clay = getWeightedAvg030('clay') / 10;
+    const sand = getWeightedAvg030('sand') / 10;
+    const silt = getWeightedAvg030('silt') / 10;
+    const soc = getWeightedAvg030('soc') / 10;
+    const nitrogenGkg = getWeightedAvg030('nitrogen') / 100;
+    const cec = getWeightedAvg030('cec') / 10;
+    const bdod = getWeightedAvg030('bdod') / 100;
+    const bdodDeep = getDepthValue('bdod', '30-60cm') / 100;
+    const cfvo = getWeightedAvg030('cfvo') / 10;
+    const ocd = getWeightedAvg030('ocd') / 10;
+
+    // FAO-ISRIC formula: N(kg/ha) = N(g/kg) × bdod(g/cm³) × depth(dm) × 10
+    // For 0-30cm: depth = 3 dm
+    const nitrogenKgHa = Math.round(nitrogenGkg * bdod * 3 * 10 * 100) / 100;
+
     return {
-      ph: 5.5 + Math.random() * 2,
-      clay: 15 + Math.random() * 25,
-      sand: 20 + Math.random() * 30,
-      silt: 15 + Math.random() * 25,
-      soc: 8 + Math.random() * 20,
-      nitrogen: 0.8 + Math.random() * 2,
-      cec: 10 + Math.random() * 20,
-      bdod: 1.1 + Math.random() * 0.5,
-      cfvo: 2 + Math.random() * 10,
-      phosphorus: 10 + Math.random() * 30,
-      potassium: 80 + Math.random() * 150,
-      ocd: 5 + Math.random() * 15,
+      ph: Math.round(ph * 100) / 100,
+      clay: Math.round(clay * 100) / 100,
+      sand: Math.round(sand * 100) / 100,
+      silt: Math.round(silt * 100) / 100,
+      soc: Math.round(soc * 100) / 100,
+      nitrogen: Math.round(nitrogenGkg * 1000) / 1000,
+      nitrogenKgHa,
+      cec: Math.round(cec * 100) / 100,
+      bdod: Math.round(bdod * 100) / 100,
+      bdodDeep: Math.round(bdodDeep * 100) / 100,
+      cfvo: Math.round(cfvo * 100) / 100,
+      ocd: Math.round(ocd * 100) / 100,
+      isReal: true,
+    };
+  } catch (err) {
+    console.error('SoilGrids fetch failed:', err);
+    // Return null-like object with isReal = false to indicate failure
+    // The UI must show that soil data is unavailable
+    return {
+      ph: 0, clay: 0, sand: 0, silt: 0, soc: 0, nitrogen: 0, nitrogenKgHa: 0,
+      cec: 0, bdod: 0, bdodDeep: 0, cfvo: 0, ocd: 0, isReal: false,
     };
   }
 }
