@@ -834,14 +834,13 @@ function calcInputRecs(soil: SoilData, crop: CropRef, zone: AgroZone): InputRec[
 
 export function runFullAnalysis(
   soil: SoilData, climate: ClimateData, geo: GeoLocation,
-  weather: CurrentWeather | null, hasIrrigation: boolean, parcelArea: number
+  weather: CurrentWeather | null, hasIrrigation: boolean, parcelArea: number,
+  lat: number = 0, lon: number = 0
 ): AnalysisResult {
   const zone = determineZone(
-    0, 0, geo.countryCode, climate.altitude,
+    lat, lon, geo.countryCode, climate.altitude,
     climate.annualRainfall, climate.deficitMonths, climate.correctedTemp
   );
-  // For zone determination we need lat/lon but they're embedded in climate/geo already
-  // Re-determine with proper lat/lon when called from the component
 
   const weights = ZONE_WEIGHTS[zone];
   const risks = assessRisks(soil, climate, zone, geo);

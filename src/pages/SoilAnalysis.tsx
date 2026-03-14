@@ -165,7 +165,7 @@ export default function SoilAnalysis() {
       await new Promise(r => setTimeout(r, 300));
       setLoadingStep(6);
 
-      const result = runFullAnalysis(soil, clim, geoData, w, hasIrrigation, area);
+      const result = runFullAnalysis(soil, clim, geoData, w, hasIrrigation, area, lat, lon);
       setAnalysis(result);
       setStep('results');
     } catch (err: any) {
