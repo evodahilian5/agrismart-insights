@@ -136,13 +136,6 @@ export default function SoilAnalysis() {
     try {
       setLoadingStep(0);
       const soil = await fetchSoilData(lat, lon);
-      if (!soil.isReal) {
-        setError(lang === 'fr'
-          ? 'Les données sol SoilGrids ne sont pas disponibles pour cette zone. L\'analyse ne peut pas être réalisée avec fiabilité.'
-          : 'SoilGrids soil data is not available for this area. Analysis cannot be reliably performed.');
-        setLoading(false);
-        return;
-      }
       setSoilData(soil);
 
       setLoadingStep(1);
@@ -613,22 +606,27 @@ export default function SoilAnalysis() {
                 <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }}
                   className="overflow-hidden mb-4">
                   <div className="liquid-glass-card rounded-xl p-4">
+                    {soilData.source && (
+                      <div className="text-[10px] text-primary font-semibold mb-2 px-2 py-1 bg-primary/10 rounded-lg inline-block">
+                        📡 {soilData.source}
+                      </div>
+                    )}
                     <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                      <RawDataItem label="pH" value={soilData.ph.toFixed(2)} source="SoilGrids ISRIC" />
-                      <RawDataItem label={lang === 'fr' ? 'Azote' : 'Nitrogen'} value={`${soilData.nitrogen.toFixed(3)} g/kg (${soilData.nitrogenKgHa.toFixed(0)} kg/ha)`} source="SoilGrids + FAO" />
-                      <RawDataItem label="SOC" value={`${soilData.soc.toFixed(1)} g/kg`} source="SoilGrids ISRIC" />
-                      <RawDataItem label="CEC" value={`${soilData.cec.toFixed(1)} cmol/kg`} source="SoilGrids ISRIC" />
-                      <RawDataItem label={lang === 'fr' ? 'Argile' : 'Clay'} value={`${soilData.clay.toFixed(1)}%`} source="SoilGrids ISRIC" />
-                      <RawDataItem label={lang === 'fr' ? 'Sable' : 'Sand'} value={`${soilData.sand.toFixed(1)}%`} source="SoilGrids ISRIC" />
-                      <RawDataItem label={lang === 'fr' ? 'Limon' : 'Silt'} value={`${soilData.silt.toFixed(1)}%`} source="SoilGrids ISRIC" />
-                      <RawDataItem label={lang === 'fr' ? 'Densité 0-30' : 'Density 0-30'} value={`${soilData.bdod.toFixed(2)} g/cm³`} source="SoilGrids ISRIC" />
-                      <RawDataItem label={lang === 'fr' ? 'Densité 30-60' : 'Density 30-60'} value={`${soilData.bdodDeep.toFixed(2)} g/cm³`} source="SoilGrids ISRIC" />
-                      <RawDataItem label={lang === 'fr' ? 'Frag. grossiers' : 'Coarse frag.'} value={`${soilData.cfvo.toFixed(1)}%`} source="SoilGrids ISRIC" />
-                      <RawDataItem label="OCD" value={`${soilData.ocd.toFixed(1)} kg/m³`} source="SoilGrids ISRIC" />
+                      <RawDataItem label="pH" value={soilData.ph.toFixed(2)} source={soilData.source || 'SoilGrids ISRIC'} />
+                      <RawDataItem label={lang === 'fr' ? 'Azote' : 'Nitrogen'} value={`${soilData.nitrogen.toFixed(3)} g/kg (${soilData.nitrogenKgHa.toFixed(0)} kg/ha)`} source="FAO-ISRIC" />
+                      <RawDataItem label="SOC" value={`${soilData.soc.toFixed(1)} g/kg`} source={soilData.source || 'SoilGrids ISRIC'} />
+                      <RawDataItem label="CEC" value={`${soilData.cec.toFixed(1)} cmol/kg`} source={soilData.source || 'SoilGrids ISRIC'} />
+                      <RawDataItem label={lang === 'fr' ? 'Argile' : 'Clay'} value={`${soilData.clay.toFixed(1)}%`} source={soilData.source || 'SoilGrids ISRIC'} />
+                      <RawDataItem label={lang === 'fr' ? 'Sable' : 'Sand'} value={`${soilData.sand.toFixed(1)}%`} source={soilData.source || 'SoilGrids ISRIC'} />
+                      <RawDataItem label={lang === 'fr' ? 'Limon' : 'Silt'} value={`${soilData.silt.toFixed(1)}%`} source={soilData.source || 'SoilGrids ISRIC'} />
+                      <RawDataItem label={lang === 'fr' ? 'Densité 0-30' : 'Density 0-30'} value={`${soilData.bdod.toFixed(2)} g/cm³`} source={soilData.source || 'SoilGrids ISRIC'} />
+                      <RawDataItem label={lang === 'fr' ? 'Densité 30-60' : 'Density 30-60'} value={`${soilData.bdodDeep.toFixed(2)} g/cm³`} source={soilData.source || 'SoilGrids ISRIC'} />
+                      <RawDataItem label={lang === 'fr' ? 'Frag. grossiers' : 'Coarse frag.'} value={`${soilData.cfvo.toFixed(1)}%`} source={soilData.source || 'SoilGrids ISRIC'} />
+                      <RawDataItem label="OCD" value={`${soilData.ocd.toFixed(1)} kg/m³`} source={soilData.source || 'SoilGrids ISRIC'} />
                     </div>
                     {climate && (
                       <div className="mt-3 pt-3 border-t border-border">
-                        <div className="text-xs font-bold text-foreground mb-1">{lang === 'fr' ? 'Normales climatiques' : 'Climate normals'} {climate.isFallback ? '(estimation)' : '(ERA5 2014-2023)'}</div>
+                        <div className="text-xs font-bold text-foreground mb-1">{lang === 'fr' ? 'Normales climatiques' : 'Climate normals'} {climate.isFallback ? '(estimation)' : '(ERA5 1991-2020)'}</div>
                         <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                           <RawDataItem label={lang === 'fr' ? 'Pluie annuelle' : 'Annual rain'} value={`${climate.annualRainfall} mm`} source={climate.isFallback ? 'Estimation' : 'ERA5'} />
                           <RawDataItem label={lang === 'fr' ? 'Mois déficit' : 'Deficit months'} value={`${climate.deficitMonths}/12`} source={climate.isFallback ? 'Estimation' : 'ERA5'} />
