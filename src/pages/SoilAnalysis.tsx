@@ -621,7 +621,7 @@ export default function SoilAnalysis() {
                     </div>
                     {climate && (
                       <div className="mt-3 pt-3 border-t border-border">
-                        <div className="text-xs font-bold text-foreground mb-1">{lang === 'fr' ? 'Normales climatiques' : 'Climate normals'} {climate.isFallback ? '(estimation)' : '(ERA5 2014-2023)'}</div>
+                        <div className="text-xs font-bold text-foreground mb-1">{lang === 'fr' ? 'Normales climatiques' : 'Climate normals'} {climate.isFallback ? '(estimation)' : '(ERA5 1991-2020)'}</div>
                         <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                           <RawDataItem label={lang === 'fr' ? 'Pluie annuelle' : 'Annual rain'} value={`${climate.annualRainfall} mm`} source={climate.isFallback ? 'Estimation' : 'ERA5'} />
                           <RawDataItem label={lang === 'fr' ? 'Mois déficit' : 'Deficit months'} value={`${climate.deficitMonths}/12`} source={climate.isFallback ? 'Estimation' : 'ERA5'} />
