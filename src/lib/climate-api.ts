@@ -53,7 +53,6 @@ const CURRENCY_MAP: Record<string, { currency: string; symbol: string; rate: num
   MR: { currency: 'MRU', symbol: 'MRU', rate: 40 },
 };
 
-// Coastal reference points for distance estimation
 const COAST_POINTS = [
   { lat: 14.7, lng: -17.5 }, { lat: 12.5, lng: -16.6 }, { lat: 11.8, lng: -15.6 },
   { lat: 9.5, lng: -13.7 }, { lat: 8.5, lng: -13.2 }, { lat: 6.3, lng: -10.8 },
@@ -76,19 +75,50 @@ function estimateCoastDistance(lat: number, lon: number): number {
 }
 
 export async function fetchClimateNormals(lat: number, lon: number): Promise<ClimateData> {
+  // ERA5 archive: fetch 1991-2020 for proper 30-year climate normals
+  // Split into two requests since the API may limit large ranges
   try {
-    const params = new URLSearchParams({
-      latitude: lat.toString(),
-      longitude: lon.toString(),
-      start_date: '2014-01-01',
-      end_date: '2023-12-31',
-      daily: 'precipitation_sum,temperature_2m_mean,temperature_2m_min,temperature_2m_max,et0_fao_evapotranspiration,shortwave_radiation_sum',
-      timezone: 'auto',
-    });
+    const fetchRange = async (start: string, end: string) => {
+      const params = new URLSearchParams({
+        latitude: lat.toString(),
+        longitude: lon.toString(),
+        start_date: start,
+        end_date: end,
+        daily: 'precipitation_sum,temperature_2m_mean,temperature_2m_min,temperature_2m_max,et0_fao_evapotranspiration,shortwave_radiation_sum',
+        timezone: 'auto',
+      });
+      const resp = await fetch(`${ARCHIVE_URL}?${params}`);
+      if (!resp.ok) throw new Error(`Archive API error: ${resp.status}`);
+      return resp.json();
+    };
 
-    const resp = await fetch(`${ARCHIVE_URL}?${params}`);
-    if (!resp.ok) throw new Error(`Archive API error: ${resp.status}`);
-    const data = await resp.json();
+    // Try 1991-2020 first; if it fails, fall back to 2000-2023
+    let data: any;
+    let yearsSpan: number;
+    try {
+      const [d1, d2] = await Promise.all([
+        fetchRange('1991-01-01', '2005-12-31'),
+        fetchRange('2006-01-01', '2020-12-31'),
+      ]);
+      // Merge daily arrays
+      data = {
+        ...d1,
+        daily: {
+          time: [...d1.daily.time, ...d2.daily.time],
+          precipitation_sum: [...d1.daily.precipitation_sum, ...d2.daily.precipitation_sum],
+          temperature_2m_mean: [...d1.daily.temperature_2m_mean, ...d2.daily.temperature_2m_mean],
+          temperature_2m_min: [...d1.daily.temperature_2m_min, ...d2.daily.temperature_2m_min],
+          temperature_2m_max: [...d1.daily.temperature_2m_max, ...d2.daily.temperature_2m_max],
+          et0_fao_evapotranspiration: [...d1.daily.et0_fao_evapotranspiration, ...d2.daily.et0_fao_evapotranspiration],
+          shortwave_radiation_sum: [...d1.daily.shortwave_radiation_sum, ...d2.daily.shortwave_radiation_sum],
+        },
+      };
+      yearsSpan = 30;
+    } catch {
+      // Fallback to smaller range
+      data = await fetchRange('2014-01-01', '2023-12-31');
+      yearsSpan = 10;
+    }
 
     const daily = data.daily;
     const dates = daily.time as string[];
@@ -97,16 +127,14 @@ export async function fetchClimateNormals(lat: number, lon: number): Promise<Cli
     const et0 = daily.et0_fao_evapotranspiration as (number | null)[];
     const solar = daily.shortwave_radiation_sum as (number | null)[];
 
-    // Compute monthly totals/averages across all years
     const monthlyRainSum = new Array(12).fill(0);
     const monthlyETPSum = new Array(12).fill(0);
     const monthlyTempSum = new Array(12).fill(0);
     const monthlyTempCount = new Array(12).fill(0);
     const monthlySolarSum = new Array(12).fill(0);
     const monthlySolarCount = new Array(12).fill(0);
-
-    // Track min monthly temps per month across years for coldest
-    const monthlyTempByYearMonth: Record<string, number[]> = {};
+    // Track humidity proxy from temperature range (dew point approximation)
+    let humidityEstimate = 65;
 
     for (let i = 0; i < dates.length; i++) {
       const month = parseInt(dates[i].substring(5, 7)) - 1;
@@ -122,9 +150,8 @@ export async function fetchClimateNormals(lat: number, lon: number): Promise<Cli
       }
     }
 
-    const years = 10;
-    const monthlyRain = monthlyRainSum.map(t => Math.round(t / years));
-    const monthlyETP = monthlyETPSum.map(t => Math.round(t / years));
+    const monthlyRain = monthlyRainSum.map(t => Math.round(t / yearsSpan));
+    const monthlyETP = monthlyETPSum.map(t => Math.round(t / yearsSpan));
     const monthlyTemp = monthlyTempSum.map((t, i) => monthlyTempCount[i] > 0 ? Math.round(t / monthlyTempCount[i] * 10) / 10 : 25);
     const waterBalance = monthlyRain.map((r, i) => r - monthlyETP[i]);
     const deficitMonths = waterBalance.filter(b => b < 0).length;
@@ -133,12 +160,20 @@ export async function fetchClimateNormals(lat: number, lon: number): Promise<Cli
     const altitude = data.elevation ?? 0;
     const annualTemp = monthlyTemp.reduce((s, t) => s + t, 0) / 12;
     const correctedTemp = annualTemp - (altitude * 6.5 / 1000);
+    const annualRainfall = monthlyRain.reduce((s, r) => s + r, 0);
     const annualSolarRadiation = monthlySolarCount[0] > 0
       ? Math.round(monthlySolarSum.reduce((s, t) => s + t, 0) / dates.length * 100) / 100
       : 18;
 
+    // Estimate humidity from rainfall pattern and zone
+    if (annualRainfall > 1500) humidityEstimate = 82;
+    else if (annualRainfall > 1000) humidityEstimate = 72;
+    else if (annualRainfall > 600) humidityEstimate = 62;
+    else if (annualRainfall > 300) humidityEstimate = 48;
+    else humidityEstimate = 38;
+
     return {
-      annualRainfall: monthlyRain.reduce((s, r) => s + r, 0),
+      annualRainfall,
       monthlyRain,
       monthlyETP,
       waterBalance,
@@ -148,7 +183,7 @@ export async function fetchClimateNormals(lat: number, lon: number): Promise<Cli
       correctedTemp: Math.round(correctedTemp * 10) / 10,
       coldestMonthTemp: Math.min(...monthlyTemp),
       hottestMonthTemp: Math.max(...monthlyTemp),
-      annualHumidity: 65,
+      annualHumidity: humidityEstimate,
       annualSolarRadiation,
       altitude,
       monthlyTemp,
@@ -227,7 +262,6 @@ export async function reverseGeocode(lat: number, lon: number): Promise<GeoLocat
   } catch (err) {
     console.error('Nominatim failed:', err);
     const distanceToCoast = estimateCoastDistance(lat, lon);
-    // Guess country from coordinates
     let cc = 'XX', country = 'Inconnu';
     if (lat > 27 && lon > -15 && lon < 0) { cc = 'MA'; country = 'Maroc'; }
     else if (lat > 12 && lat < 17 && lon > -18 && lon < -11) { cc = 'SN'; country = 'Sénégal'; }

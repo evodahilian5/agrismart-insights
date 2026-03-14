@@ -20,6 +20,28 @@ export interface SoilData {
   isReal: boolean;      // true if from API, false if fallback
 }
 
+async function fetchWithRetry(url: string, maxRetries = 3): Promise<Response> {
+  for (let attempt = 0; attempt < maxRetries; attempt++) {
+    try {
+      const resp = await fetch(url);
+      if (resp.ok) return resp;
+      if (resp.status === 503 || resp.status === 429 || resp.status >= 500) {
+        const delay = Math.min(2000 * Math.pow(2, attempt), 10000);
+        console.warn(`SoilGrids attempt ${attempt + 1}/${maxRetries} failed (${resp.status}), retrying in ${delay}ms...`);
+        await new Promise(r => setTimeout(r, delay));
+        continue;
+      }
+      throw new Error(`SoilGrids API error: ${resp.status}`);
+    } catch (err: any) {
+      if (attempt === maxRetries - 1) throw err;
+      const delay = Math.min(2000 * Math.pow(2, attempt), 10000);
+      console.warn(`SoilGrids attempt ${attempt + 1}/${maxRetries} network error, retrying in ${delay}ms...`);
+      await new Promise(r => setTimeout(r, delay));
+    }
+  }
+  throw new Error('SoilGrids: max retries exceeded');
+}
+
 export async function fetchSoilData(lat: number, lon: number): Promise<SoilData> {
   const properties = ['phh2o', 'clay', 'sand', 'silt', 'soc', 'nitrogen', 'cec', 'bdod', 'cfvo', 'ocd'];
   const depths = ['0-5cm', '5-15cm', '15-30cm', '30-60cm'];
@@ -32,8 +54,7 @@ export async function fetchSoilData(lat: number, lon: number): Promise<SoilData>
   params.append('value', 'mean');
 
   try {
-    const resp = await fetch(`${SOILGRIDS_BASE}?${params.toString()}`);
-    if (!resp.ok) throw new Error(`SoilGrids API error: ${resp.status}`);
+    const resp = await fetchWithRetry(`${SOILGRIDS_BASE}?${params.toString()}`);
     const data = await resp.json();
 
     // Get weighted average for 0-30cm (weights: 5/30, 10/30, 15/30)
@@ -109,8 +130,6 @@ export async function fetchSoilData(lat: number, lon: number): Promise<SoilData>
     };
   } catch (err) {
     console.error('SoilGrids fetch failed:', err);
-    // Return null-like object with isReal = false to indicate failure
-    // The UI must show that soil data is unavailable
     return {
       ph: 0, clay: 0, sand: 0, silt: 0, soc: 0, nitrogen: 0, nitrogenKgHa: 0,
       cec: 0, bdod: 0, bdodDeep: 0, cfvo: 0, ocd: 0, isReal: false,
