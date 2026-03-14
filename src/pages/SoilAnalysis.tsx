@@ -136,13 +136,6 @@ export default function SoilAnalysis() {
     try {
       setLoadingStep(0);
       const soil = await fetchSoilData(lat, lon);
-      if (!soil.isReal) {
-        setError(lang === 'fr'
-          ? 'Les données sol SoilGrids ne sont pas disponibles pour cette zone. L\'analyse ne peut pas être réalisée avec fiabilité.'
-          : 'SoilGrids soil data is not available for this area. Analysis cannot be reliably performed.');
-        setLoading(false);
-        return;
-      }
       setSoilData(soil);
 
       setLoadingStep(1);
