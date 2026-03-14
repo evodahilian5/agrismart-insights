@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom';
 import { useApp } from '@/contexts/AppContext';
 import { motion } from 'framer-motion';
 import { Leaf, BarChart3, Users, Droplets, Sun, TrendingUp, ArrowRight } from 'lucide-react';
-import heroImg from '@/assets/hero-farm.jpg';
+import heroImg from '@/assets/hero-crops.webp';
 import soilImg from '@/assets/soil-hands.jpg';
 
 export default function Landing() {
