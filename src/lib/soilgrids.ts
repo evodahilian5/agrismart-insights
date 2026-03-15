@@ -25,13 +25,6 @@ export async function fetchSoilData(lat: number, lon: number): Promise<SoilData>
   // Strategy 1: Edge function (SoilGrids → OpenLandMap → Regional)
   try {
     console.log('Calling soil-data edge function...');
-    const { data, error } = await supabase.functions.invoke('soil-data', {
-      method: 'GET',
-      headers: { 'Content-Type': 'application/json' },
-      body: null,
-    });
-
-    // supabase.functions.invoke doesn't support GET params well, use fetch directly
     const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
     const anonKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
     
