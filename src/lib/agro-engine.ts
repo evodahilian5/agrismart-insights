@@ -46,12 +46,24 @@ export interface CropScore {
   subScores: { ph: number; texture: number; temp: number; rain: number; nitrogen: number };
   yieldLow: number;
   yieldHigh: number;
+  yieldLowPerHa: number;
+  yieldHighPerHa: number;
   revenueLow: number;
   revenueHigh: number;
   costsLow: number;
   costsHigh: number;
   marginLow: number;
   marginHigh: number;
+  costBreakdown: {
+    seeds: number;
+    labor: number;
+    fertilizer: number;
+    phyto: number;
+    transport: number;
+  };
+  pricePerTon: number;
+  pricePerTonLocal: number;
+  forecastYear: number;
   sowingWindow: { fr: string; en: string };
   cycleDays: number;
   harvestWindow: { fr: string; en: string };
