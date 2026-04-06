@@ -333,11 +333,17 @@ export default function SoilAnalysis() {
     rows.push(['ETP (mm)', ...climate.monthlyETP.map(String)]);
     rows.push(['Bilan (mm)', ...climate.waterBalance.map(String)]);
     rows.push([]);
-    rows.push(['=== CULTURES RECOMMANDÉES ===']);
-    rows.push(['Rang', 'Culture', 'Score (%)', 'Grade', 'Rendement bas (t/ha)', 'Rendement haut (t/ha)', 'Marge basse', 'Marge haute', 'Semis', 'Récolte', 'Cycle (jours)']);
+    rows.push([`=== CULTURES RECOMMANDÉES — Prévisions ${new Date().getFullYear()} ===`]);
+    rows.push(['Rang', 'Culture', 'Score (%)', 'Grade', 'Rendement/ha bas (t/ha)', 'Rendement/ha haut (t/ha)', 'Production totale bas (t)', 'Production totale haut (t)', 'Prix/t (USD)', `Prix/t (${geo.currencySymbol})`, 'Revenu brut bas', 'Revenu brut haut', 'Coûts bas', 'Coûts haut', 'Semences', 'Main d\'œuvre', 'Engrais', 'Phyto', 'Transport', 'Marge basse', 'Marge haute', 'Semis', 'Récolte', 'Cycle (jours)']);
     analysis.topCrops.forEach((c, i) => {
       rows.push([String(i + 1), c.name[lang], String(c.score), GRADE_LABELS[c.grade][lang],
-        c.yieldLow.toFixed(1), c.yieldHigh.toFixed(1), fmtCur(c.marginLow, geo), fmtCur(c.marginHigh, geo),
+        c.yieldLowPerHa.toFixed(1), c.yieldHighPerHa.toFixed(1), c.yieldLow.toFixed(1), c.yieldHigh.toFixed(1),
+        String(c.pricePerTon), String(c.pricePerTonLocal),
+        fmtCur(c.revenueLow, geo), fmtCur(c.revenueHigh, geo),
+        fmtCur(c.costsLow, geo), fmtCur(c.costsHigh, geo),
+        fmtCur(c.costBreakdown.seeds, geo), fmtCur(c.costBreakdown.labor, geo),
+        fmtCur(c.costBreakdown.fertilizer, geo), fmtCur(c.costBreakdown.phyto, geo), fmtCur(c.costBreakdown.transport, geo),
+        fmtCur(c.marginLow, geo), fmtCur(c.marginHigh, geo),
         L_(c.sowingWindow), L_(c.harvestWindow), String(c.cycleDays)]);
     });
 
