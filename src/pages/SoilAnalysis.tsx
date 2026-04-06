@@ -29,11 +29,12 @@ function LeafletMap({ positions, setPositions, center }: { positions: LatLngPoin
   const polygonRef = useRef<L.Polygon | null>(null);
   const markersRef = useRef<L.CircleMarker[]>([]);
   const positionsRef = useRef(positions);
+  const hasCenteredRef = useRef(false);
   positionsRef.current = positions;
 
   useEffect(() => {
     if (!containerRef.current || mapRef.current) return;
-    const map = L.map(containerRef.current, { scrollWheelZoom: true }).setView(center, 6);
+    const map = L.map(containerRef.current, { scrollWheelZoom: true }).setView(center, 13);
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '© OpenStreetMap' }).addTo(map);
     mapRef.current = map;
     map.on('click', (e: L.LeafletMouseEvent) => {
@@ -41,6 +42,14 @@ function LeafletMap({ positions, setPositions, center }: { positions: LatLngPoin
     });
     return () => { map.remove(); mapRef.current = null; };
   }, []);
+
+  // Re-center map when user location is resolved (only once, before any points drawn)
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || hasCenteredRef.current || positions.length > 0) return;
+    map.setView(center, 13);
+    hasCenteredRef.current = true;
+  }, [center, positions.length]);
 
   useEffect(() => {
     const map = mapRef.current;
@@ -131,11 +140,23 @@ export default function SoilAnalysis() {
   const [farmerBudget, setFarmerBudget] = useState('');
   const [farmerSoilObs, setFarmerSoilObs] = useState('');
   const resultsRef = useRef<HTMLDivElement>(null);
+  // User geolocation for map centering
+  const [userLocation, setUserLocation] = useState<[number, number] | null>(null);
+
+  useEffect(() => {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (pos) => setUserLocation([pos.coords.latitude, pos.coords.longitude]),
+        () => { /* fallback stays default */ },
+        { timeout: 5000, enableHighAccuracy: false }
+      );
+    }
+  }, []);
 
   const area = calculateArea(positions);
   const center: [number, number] = positions.length > 0
     ? [positions.reduce((s, p) => s + p.lat, 0) / positions.length, positions.reduce((s, p) => s + p.lng, 0) / positions.length]
-    : [7.5, 2.5];
+    : userLocation || [7.5, 2.5];
   const monthLabels = lang === 'fr' ? MONTH_LABELS_FR : MONTH_LABELS_EN;
 
   const analyze = async () => {
@@ -221,13 +242,15 @@ export default function SoilAnalysis() {
       addSpacer(4);
 
       // Top crops
-      addLine('CULTURES RECOMMANDÉES', 12, 'bold');
+      addLine(`CULTURES RECOMMANDÉES — Prévisions ${new Date().getFullYear()}`, 12, 'bold');
       analysis.topCrops.slice(0, 5).forEach((c, i) => {
         addLine(`${i + 1}. ${c.name[lang]} — ${c.score}% (${GRADE_LABELS[c.grade][lang]})`, 10, 'bold');
-        addLine(`   Rendement : ${c.yieldLow.toFixed(1)} à ${c.yieldHigh.toFixed(1)} t/ha`);
+        addLine(`   Rendement : ${c.yieldLowPerHa.toFixed(1)} à ${c.yieldHighPerHa.toFixed(1)} t/ha | Production totale : ${c.yieldLow.toFixed(1)} à ${c.yieldHigh.toFixed(1)} t (${area.toFixed(1)} ha)`);
+        addLine(`   Prix ${c.forecastYear} : ${c.pricePerTon} USD/t (${c.pricePerTonLocal.toLocaleString('fr-FR')} ${geo.currencySymbol}/t)`);
+        addLine(`   Revenu brut : ${fmtCur(c.revenueLow, geo)} à ${fmtCur(c.revenueHigh, geo)}`);
+        addLine(`   Coûts : ${fmtCur(c.costsLow, geo)} à ${fmtCur(c.costsHigh, geo)} (semences: ${fmtCur(c.costBreakdown.seeds, geo)}, main d'œuvre: ${fmtCur(c.costBreakdown.labor, geo)}, engrais: ${fmtCur(c.costBreakdown.fertilizer, geo)}, phyto: ${fmtCur(c.costBreakdown.phyto, geo)}, transport: ${fmtCur(c.costBreakdown.transport, geo)})`);
         addLine(`   Semis : ${L_(c.sowingWindow)} | Récolte : ${L_(c.harvestWindow)} (${c.cycleDays} jours)`);
         addLine(`   Marge nette : ${fmtCur(c.marginLow, geo)} à ${fmtCur(c.marginHigh, geo)}`);
-        // Input recs
         c.inputRecommendations.forEach(rec => {
           addLine(`   → ${L_(rec.name)} : ${rec.quantity} — ${L_(rec.timing)}`);
         });
@@ -256,7 +279,7 @@ export default function SoilAnalysis() {
       // Footer
       y = pdf.internal.pageSize.getHeight() - 10;
       pdf.setFontSize(7); pdf.setFont('helvetica', 'normal');
-      pdf.text('Sources : SoilGrids ISRIC/NASA · ERA5 Open-Meteo · FAO EcoCrop · CIRAD · IITA · FAOSTAT 2022-2023', w / 2, y, { align: 'center' });
+      pdf.text(`Sources : SoilGrids ISRIC/NASA · ERA5 Open-Meteo · FAO EcoCrop · CIRAD/Cyclope 2024 · IITA · IFDC Africa · FAOSTAT 2022-2023 · Projections ${new Date().getFullYear()}`, w / 2, y, { align: 'center' });
 
       // Use blob for reliable download
       const blob = pdf.output('blob');
@@ -310,11 +333,17 @@ export default function SoilAnalysis() {
     rows.push(['ETP (mm)', ...climate.monthlyETP.map(String)]);
     rows.push(['Bilan (mm)', ...climate.waterBalance.map(String)]);
     rows.push([]);
-    rows.push(['=== CULTURES RECOMMANDÉES ===']);
-    rows.push(['Rang', 'Culture', 'Score (%)', 'Grade', 'Rendement bas (t/ha)', 'Rendement haut (t/ha)', 'Marge basse', 'Marge haute', 'Semis', 'Récolte', 'Cycle (jours)']);
+    rows.push([`=== CULTURES RECOMMANDÉES — Prévisions ${new Date().getFullYear()} ===`]);
+    rows.push(['Rang', 'Culture', 'Score (%)', 'Grade', 'Rendement/ha bas (t/ha)', 'Rendement/ha haut (t/ha)', 'Production totale bas (t)', 'Production totale haut (t)', 'Prix/t (USD)', `Prix/t (${geo.currencySymbol})`, 'Revenu brut bas', 'Revenu brut haut', 'Coûts bas', 'Coûts haut', 'Semences', 'Main d\'œuvre', 'Engrais', 'Phyto', 'Transport', 'Marge basse', 'Marge haute', 'Semis', 'Récolte', 'Cycle (jours)']);
     analysis.topCrops.forEach((c, i) => {
       rows.push([String(i + 1), c.name[lang], String(c.score), GRADE_LABELS[c.grade][lang],
-        c.yieldLow.toFixed(1), c.yieldHigh.toFixed(1), fmtCur(c.marginLow, geo), fmtCur(c.marginHigh, geo),
+        c.yieldLowPerHa.toFixed(1), c.yieldHighPerHa.toFixed(1), c.yieldLow.toFixed(1), c.yieldHigh.toFixed(1),
+        String(c.pricePerTon), String(c.pricePerTonLocal),
+        fmtCur(c.revenueLow, geo), fmtCur(c.revenueHigh, geo),
+        fmtCur(c.costsLow, geo), fmtCur(c.costsHigh, geo),
+        fmtCur(c.costBreakdown.seeds, geo), fmtCur(c.costBreakdown.labor, geo),
+        fmtCur(c.costBreakdown.fertilizer, geo), fmtCur(c.costBreakdown.phyto, geo), fmtCur(c.costBreakdown.transport, geo),
+        fmtCur(c.marginLow, geo), fmtCur(c.marginHigh, geo),
         L_(c.sowingWindow), L_(c.harvestWindow), String(c.cycleDays)]);
     });
 
@@ -731,16 +760,39 @@ export default function SoilAnalysis() {
                             </div>
                           )}
 
-                          {/* Economics */}
+                          {/* Economics — Enhanced 2026 projections */}
                           <div className="rounded-xl border border-border bg-card p-4">
-                            <h4 className="text-sm font-bold text-foreground mb-2">{lang === 'fr' ? 'Estimation économique' : 'Economic estimate'}</h4>
-                            <div className="grid grid-cols-2 gap-2">
-                              <SoilCard label={lang === 'fr' ? 'Rendement' : 'Yield'} value={`${crop.yieldLow.toFixed(1)} — ${crop.yieldHigh.toFixed(1)}`} unit="t/ha" interp="" />
-                              <SoilCard label={lang === 'fr' ? 'Revenu brut' : 'Revenue'} value={`${fmtCur(crop.revenueLow, geo)}`} unit={`→ ${fmtCur(crop.revenueHigh, geo)}`} interp="" />
-                              <SoilCard label={lang === 'fr' ? 'Coûts' : 'Costs'} value={`${fmtCur(crop.costsLow, geo)}`} unit={`→ ${fmtCur(crop.costsHigh, geo)}`} interp="" />
-                              <SoilCard label={lang === 'fr' ? 'Marge nette' : 'Net margin'} value={`${fmtCur(crop.marginLow, geo)}`} unit={`→ ${fmtCur(crop.marginHigh, geo)}`} interp="" />
+                            <h4 className="text-sm font-bold text-foreground mb-3 flex items-center gap-2">
+                              <TrendingUp className="w-4 h-4 text-primary" />
+                              {lang === 'fr' ? `Estimation économique ${crop.forecastYear}` : `Economic estimate ${crop.forecastYear}`}
+                            </h4>
+                            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 mb-3">
+                              <SoilCard label={lang === 'fr' ? 'Rendement/ha' : 'Yield/ha'} value={`${crop.yieldLowPerHa.toFixed(1)} — ${crop.yieldHighPerHa.toFixed(1)}`} unit="t/ha" interp="" />
+                              <SoilCard label={lang === 'fr' ? `Production totale (${area.toFixed(1)} ha)` : `Total output (${area.toFixed(1)} ha)`} value={`${crop.yieldLow.toFixed(1)} — ${crop.yieldHigh.toFixed(1)}`} unit="t" interp="" />
+                              <SoilCard label={lang === 'fr' ? 'Prix/tonne' : 'Price/ton'} value={`${crop.pricePerTonLocal.toLocaleString('fr-FR')}`} unit={geo.currencySymbol} interp={`${crop.pricePerTon} USD/t`} />
+                              <SoilCard label={lang === 'fr' ? 'Revenu brut' : 'Revenue'} value={fmtCur(crop.revenueLow, geo)} unit={`→ ${fmtCur(crop.revenueHigh, geo)}`} interp="" />
+                              <SoilCard label={lang === 'fr' ? 'Coûts totaux' : 'Total costs'} value={fmtCur(crop.costsLow, geo)} unit={`→ ${fmtCur(crop.costsHigh, geo)}`} interp="" />
+                              <SoilCard label={lang === 'fr' ? 'Marge nette' : 'Net margin'} value={fmtCur(crop.marginLow, geo)} unit={`→ ${fmtCur(crop.marginHigh, geo)}`}
+                                interp={crop.marginLow > 0 ? '🟢' : '🔴'} />
                             </div>
-                            <p className="text-[9px] text-muted-foreground mt-2">Source : FAOSTAT 2022-2023</p>
+                            {/* Cost breakdown */}
+                            <div className="rounded-lg bg-secondary/30 p-3">
+                              <div className="text-[10px] font-bold text-foreground mb-2 uppercase tracking-wider">
+                                {lang === 'fr' ? 'Décomposition des coûts' : 'Cost breakdown'}
+                              </div>
+                              <div className="grid grid-cols-2 sm:grid-cols-5 gap-1.5">
+                                <SoilCard label={lang === 'fr' ? 'Semences' : 'Seeds'} value={fmtCur(crop.costBreakdown.seeds, geo)} unit="" interp="" />
+                                <SoilCard label={lang === 'fr' ? 'Main d\'œuvre' : 'Labor'} value={fmtCur(crop.costBreakdown.labor, geo)} unit="" interp="" />
+                                <SoilCard label={lang === 'fr' ? 'Engrais' : 'Fertilizer'} value={fmtCur(crop.costBreakdown.fertilizer, geo)} unit="" interp="" />
+                                <SoilCard label={lang === 'fr' ? 'Phytosanitaire' : 'Phytosanitary'} value={fmtCur(crop.costBreakdown.phyto, geo)} unit="" interp="" />
+                                <SoilCard label="Transport" value={fmtCur(crop.costBreakdown.transport, geo)} unit="" interp="" />
+                              </div>
+                            </div>
+                            <p className="text-[9px] text-muted-foreground mt-2">
+                              {lang === 'fr'
+                                ? `Source : FAOSTAT 2022-2023 + indice d'inflation CIRAD/Cyclope 2024 projeté ${crop.forecastYear}. Prix ajustés IFDC Africa, AfricaRice, IITA.`
+                                : `Source: FAOSTAT 2022-2023 + CIRAD/Cyclope 2024 inflation index projected ${crop.forecastYear}. Prices adjusted IFDC Africa, AfricaRice, IITA.`}
+                            </p>
                           </div>
 
                           {/* Cycle */}
