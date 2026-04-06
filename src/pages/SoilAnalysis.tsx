@@ -29,11 +29,12 @@ function LeafletMap({ positions, setPositions, center }: { positions: LatLngPoin
   const polygonRef = useRef<L.Polygon | null>(null);
   const markersRef = useRef<L.CircleMarker[]>([]);
   const positionsRef = useRef(positions);
+  const hasCenteredRef = useRef(false);
   positionsRef.current = positions;
 
   useEffect(() => {
     if (!containerRef.current || mapRef.current) return;
-    const map = L.map(containerRef.current, { scrollWheelZoom: true }).setView(center, 6);
+    const map = L.map(containerRef.current, { scrollWheelZoom: true }).setView(center, 13);
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '© OpenStreetMap' }).addTo(map);
     mapRef.current = map;
     map.on('click', (e: L.LeafletMouseEvent) => {
@@ -41,6 +42,14 @@ function LeafletMap({ positions, setPositions, center }: { positions: LatLngPoin
     });
     return () => { map.remove(); mapRef.current = null; };
   }, []);
+
+  // Re-center map when user location is resolved (only once, before any points drawn)
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || hasCenteredRef.current || positions.length > 0) return;
+    map.setView(center, 13);
+    hasCenteredRef.current = true;
+  }, [center, positions.length]);
 
   useEffect(() => {
     const map = mapRef.current;
