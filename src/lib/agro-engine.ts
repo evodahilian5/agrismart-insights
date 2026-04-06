@@ -953,24 +953,43 @@ export function runFullAnalysis(
 
     const grade: Grade = score >= 75 ? 'excellent' : score >= 55 ? 'bon' : score >= 35 ? 'moyen' : 'deconseille';
 
-    // Economics
+    // Economics — 2026 projections based on FAOSTAT 2022-2023 + CIRAD price trend index
+    // CIRAD/Cyclope 2024: +3-8% annual price increase for African commodities (inflation + demand)
+    const FORECAST_YEAR = 2026;
+    const PRICE_INFLATION_FACTOR = 1.12; // cumulative 2023→2026 (~3.8%/yr, CIRAD Cyclope, FAO AMIS)
+    const adjustedPriceUSD = crop.priceUSD * PRICE_INFLATION_FACTOR;
+
     const zoneYields = crop.yields[zone] || crop.yields[Object.keys(crop.yields)[0] as AgroZone] || [0.5, 1.0];
     const scoreFactor = score / 100;
-    const yieldLow = Math.round(zoneYields[0] * scoreFactor * 100) / 100;
-    const yieldHigh = Math.round(zoneYields[1] * scoreFactor * 100) / 100;
-    const revenueLowUSD = yieldLow * crop.priceUSD;
-    const revenueHighUSD = yieldHigh * crop.priceUSD;
-    const seedCosts = (revenueLowUSD + revenueHighUSD) / 2 * crop.seedCostPct / 100;
-    const laborCosts = (revenueLowUSD + revenueHighUSD) / 2 * crop.laborPct / 100;
-    const inputCosts = soil.nitrogenKgHa < 60 ? Math.max(0, 60 - soil.nitrogenKgHa) / 0.46 * 500 / 1000 : 0;
-    const totalCostsLow = (seedCosts + laborCosts + inputCosts) * 0.8;
-    const totalCostsHigh = (seedCosts + laborCosts + inputCosts) * 1.2;
+    const yieldLowPerHa = Math.round(zoneYields[0] * scoreFactor * 100) / 100;
+    const yieldHighPerHa = Math.round(zoneYields[1] * scoreFactor * 100) / 100;
+    const yieldLow = Math.round(yieldLowPerHa * parcelArea * 100) / 100;
+    const yieldHigh = Math.round(yieldHighPerHa * parcelArea * 100) / 100;
+
+    // Detailed cost breakdown per hectare (USD) — sources: CIRAD 2023, IITA, AfricaRice
+    const avgYieldPerHa = (yieldLowPerHa + yieldHighPerHa) / 2;
+    const avgRevenuePerHa = avgYieldPerHa * adjustedPriceUSD;
+    const seedCostPerHa = avgRevenuePerHa * crop.seedCostPct / 100;
+    const laborCostPerHa = avgRevenuePerHa * crop.laborPct / 100;
+    // Fertilizer: based on actual soil deficit
+    const fertilizerNeedKg = soil.nitrogenKgHa < 60 ? Math.max(0, 60 - soil.nitrogenKgHa) / 0.46 : 0;
+    const fertilizerCostPerHa = fertilizerNeedKg * 0.6; // ~0.6 USD/kg urea (IFDC Africa 2024)
+    // Phytosanitary: 5-8% of revenue for vegetables, 2-4% for cereals/legumes
+    const phytoPct = ['vegetables'].includes(crop.category) ? 0.065 : 0.03;
+    const phytoCostPerHa = avgRevenuePerHa * phytoPct;
+    // Transport/post-harvest: 5-10% depending on perishability
+    const transportPct = crop.isTuber || ['vegetables'].includes(crop.category) ? 0.08 : 0.05;
+    const transportCostPerHa = avgRevenuePerHa * transportPct;
+
+    const totalCostPerHa = seedCostPerHa + laborCostPerHa + fertilizerCostPerHa + phytoCostPerHa + transportCostPerHa;
 
     const rate = geo.currencyRate;
+    const revenueLowUSD = yieldLowPerHa * adjustedPriceUSD;
+    const revenueHighUSD = yieldHighPerHa * adjustedPriceUSD;
     const revenueLow = Math.round(revenueLowUSD * rate * parcelArea);
     const revenueHigh = Math.round(revenueHighUSD * rate * parcelArea);
-    const costsLow = Math.round(totalCostsLow * rate * parcelArea);
-    const costsHigh = Math.round(totalCostsHigh * rate * parcelArea);
+    const costsLow = Math.round(totalCostPerHa * 0.85 * rate * parcelArea);
+    const costsHigh = Math.round(totalCostPerHa * 1.15 * rate * parcelArea);
 
     // Sowing info
     const sowInfo = crop.sowingByZone[zone] || crop.sowingByZone[Object.keys(crop.sowingByZone)[0] as AgroZone];
@@ -988,10 +1007,21 @@ export function runFullAnalysis(
       key, name: crop.name, category: crop.category, score, grade,
       subScores: { ph: phScore, texture: textureScore, temp: tempScore, rain: rainScore, nitrogen: nitrogenScore },
       yieldLow, yieldHigh,
+      yieldLowPerHa, yieldHighPerHa,
       revenueLow, revenueHigh,
       costsLow, costsHigh,
       marginLow: revenueLow - costsHigh,
       marginHigh: revenueHigh - costsLow,
+      costBreakdown: {
+        seeds: Math.round(seedCostPerHa * rate * parcelArea),
+        labor: Math.round(laborCostPerHa * rate * parcelArea),
+        fertilizer: Math.round(fertilizerCostPerHa * rate * parcelArea),
+        phyto: Math.round(phytoCostPerHa * rate * parcelArea),
+        transport: Math.round(transportCostPerHa * rate * parcelArea),
+      },
+      pricePerTon: Math.round(adjustedPriceUSD),
+      pricePerTonLocal: Math.round(adjustedPriceUSD * rate),
+      forecastYear: FORECAST_YEAR,
       sowingWindow: sowInfo ? { fr: sowInfo.sow, en: sowInfo.sow } : { fr: '—', en: '—' },
       cycleDays: crop.cycleDays,
       harvestWindow: sowInfo ? { fr: sowInfo.harvest, en: sowInfo.harvest } : { fr: '—', en: '—' },
