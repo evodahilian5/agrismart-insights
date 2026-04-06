@@ -242,13 +242,15 @@ export default function SoilAnalysis() {
       addSpacer(4);
 
       // Top crops
-      addLine('CULTURES RECOMMANDÉES', 12, 'bold');
+      addLine(`CULTURES RECOMMANDÉES — Prévisions ${new Date().getFullYear()}`, 12, 'bold');
       analysis.topCrops.slice(0, 5).forEach((c, i) => {
         addLine(`${i + 1}. ${c.name[lang]} — ${c.score}% (${GRADE_LABELS[c.grade][lang]})`, 10, 'bold');
-        addLine(`   Rendement : ${c.yieldLow.toFixed(1)} à ${c.yieldHigh.toFixed(1)} t/ha`);
+        addLine(`   Rendement : ${c.yieldLowPerHa.toFixed(1)} à ${c.yieldHighPerHa.toFixed(1)} t/ha | Production totale : ${c.yieldLow.toFixed(1)} à ${c.yieldHigh.toFixed(1)} t (${area.toFixed(1)} ha)`);
+        addLine(`   Prix ${c.forecastYear} : ${c.pricePerTon} USD/t (${c.pricePerTonLocal.toLocaleString('fr-FR')} ${geo.currencySymbol}/t)`);
+        addLine(`   Revenu brut : ${fmtCur(c.revenueLow, geo)} à ${fmtCur(c.revenueHigh, geo)}`);
+        addLine(`   Coûts : ${fmtCur(c.costsLow, geo)} à ${fmtCur(c.costsHigh, geo)} (semences: ${fmtCur(c.costBreakdown.seeds, geo)}, main d'œuvre: ${fmtCur(c.costBreakdown.labor, geo)}, engrais: ${fmtCur(c.costBreakdown.fertilizer, geo)}, phyto: ${fmtCur(c.costBreakdown.phyto, geo)}, transport: ${fmtCur(c.costBreakdown.transport, geo)})`);
         addLine(`   Semis : ${L_(c.sowingWindow)} | Récolte : ${L_(c.harvestWindow)} (${c.cycleDays} jours)`);
         addLine(`   Marge nette : ${fmtCur(c.marginLow, geo)} à ${fmtCur(c.marginHigh, geo)}`);
-        // Input recs
         c.inputRecommendations.forEach(rec => {
           addLine(`   → ${L_(rec.name)} : ${rec.quantity} — ${L_(rec.timing)}`);
         });
