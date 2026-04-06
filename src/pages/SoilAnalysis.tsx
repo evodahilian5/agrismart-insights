@@ -279,7 +279,7 @@ export default function SoilAnalysis() {
       // Footer
       y = pdf.internal.pageSize.getHeight() - 10;
       pdf.setFontSize(7); pdf.setFont('helvetica', 'normal');
-      pdf.text('Sources : SoilGrids ISRIC/NASA · ERA5 Open-Meteo · FAO EcoCrop · CIRAD · IITA · FAOSTAT 2022-2023', w / 2, y, { align: 'center' });
+      pdf.text(`Sources : SoilGrids ISRIC/NASA · ERA5 Open-Meteo · FAO EcoCrop · CIRAD/Cyclope 2024 · IITA · IFDC Africa · FAOSTAT 2022-2023 · Projections ${new Date().getFullYear()}`, w / 2, y, { align: 'center' });
 
       // Use blob for reliable download
       const blob = pdf.output('blob');
