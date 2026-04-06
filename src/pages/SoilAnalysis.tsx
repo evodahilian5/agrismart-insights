@@ -131,11 +131,23 @@ export default function SoilAnalysis() {
   const [farmerBudget, setFarmerBudget] = useState('');
   const [farmerSoilObs, setFarmerSoilObs] = useState('');
   const resultsRef = useRef<HTMLDivElement>(null);
+  // User geolocation for map centering
+  const [userLocation, setUserLocation] = useState<[number, number] | null>(null);
+
+  useEffect(() => {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (pos) => setUserLocation([pos.coords.latitude, pos.coords.longitude]),
+        () => { /* fallback stays default */ },
+        { timeout: 5000, enableHighAccuracy: false }
+      );
+    }
+  }, []);
 
   const area = calculateArea(positions);
   const center: [number, number] = positions.length > 0
     ? [positions.reduce((s, p) => s + p.lat, 0) / positions.length, positions.reduce((s, p) => s + p.lng, 0) / positions.length]
-    : [7.5, 2.5];
+    : userLocation || [7.5, 2.5];
   const monthLabels = lang === 'fr' ? MONTH_LABELS_FR : MONTH_LABELS_EN;
 
   const analyze = async () => {
