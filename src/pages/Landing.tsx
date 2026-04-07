@@ -31,32 +31,28 @@ export default function Landing() {
   return (
     <div className="min-h-screen bg-background">
       {/* Hero — image fully visible, no blur */}
-      <section className="relative h-screen flex items-center justify-center overflow-hidden">
+      <section className="relative h-screen flex items-end sm:items-center overflow-hidden pb-24 sm:pb-0">
         <img src={heroImg} alt="Agricultural farmland with crops" className="absolute inset-0 w-full h-full object-cover" />
-        <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-transparent to-black/50" />
-        <div className="relative z-10 text-right px-6 sm:px-12 lg:px-20 max-w-6xl ml-auto mr-4 sm:mr-8 lg:mr-16">
+        <div className="absolute inset-0 bg-gradient-to-r from-black/40 via-black/20 to-transparent" />
+        <div className="relative z-10 text-left px-6 sm:px-12 lg:px-20 max-w-3xl">
           <motion.div initial={{ opacity: 0, y: 40 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8 }}>
-            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-black/30 backdrop-blur-sm border border-white/20 mb-8">
-              <Leaf className="w-4 h-4 text-green-400" />
-              <span className="text-sm font-medium text-white">AgriSmartConnect</span>
-            </div>
-            <h1 className="text-4xl sm:text-6xl lg:text-7xl font-black text-white leading-tight mb-6 drop-shadow-lg">
+            <h1 className="text-4xl sm:text-6xl lg:text-7xl font-black text-white leading-[1.1] mb-6 drop-shadow-lg">
               {lang === 'fr' ? (
-                <>Agriculture Intelligente,<br />Résultats <span className="text-green-400">Concrets</span></>
+                <>L'Agriculture<br />Intelligente,<br /><span className="text-green-400">Connectée.</span></>
               ) : (
-                <>Smart Agriculture,<br /><span className="text-green-400">Concrete</span> Results</>
+                <>Smart<br />Agriculture,<br /><span className="text-green-400">Connected.</span></>
               )}
             </h1>
-            <p className="text-lg sm:text-xl text-white/90 max-w-2xl ml-auto mb-10 leading-relaxed drop-shadow-md">
+            <p className="text-base sm:text-lg text-white/90 max-w-xl mb-10 leading-relaxed drop-shadow-md">
               {lang === 'fr'
-                ? "Optimisez vos rendements tout en réduisant vos apports d'intrants et connectez-vous au marché agricole."
-                : 'Optimize your yields while reducing input costs and connect to the agricultural market.'}
+                ? "Analysez vos sols, optimisez vos cultures et connectez-vous avec le marché agricole."
+                : 'Analyze your soils, optimize your crops and connect to the agricultural market.'}
             </p>
-            <div className="flex flex-col sm:flex-row items-center justify-end gap-4">
-              <Link to="/auth?role=farmer" className="w-full sm:w-auto px-8 py-4 rounded-2xl text-lg font-bold bg-green-gradient text-white hover:opacity-90 transition-all shadow-lg flex items-center justify-center gap-2">
+            <div className="flex flex-col sm:flex-row items-start gap-4">
+              <Link to="/auth?role=farmer" className="px-8 py-4 rounded-2xl text-lg font-bold bg-green-gradient text-white hover:opacity-90 transition-all shadow-lg flex items-center gap-2">
                 {t('landing.farmer')} <ArrowRight className="w-5 h-5" />
               </Link>
-              <Link to="/auth?role=company" className="w-full sm:w-auto px-8 py-4 rounded-2xl text-lg font-bold bg-white/15 backdrop-blur-sm border border-white/25 text-white hover:bg-white/25 transition-all flex items-center justify-center gap-2">
+              <Link to="/auth?role=company" className="px-8 py-4 rounded-2xl text-lg font-bold bg-white/15 backdrop-blur-sm border border-white/25 text-white hover:bg-white/25 transition-all flex items-center gap-2">
                 {t('landing.company')}
               </Link>
             </div>
