@@ -877,7 +877,7 @@ const CROPS: Record<string, CropRef> = {
     zones: ['guinean', 'sudanian'],
     yields: { 'guinean': [8.0, 15.0] },
     priceUSD: 100, seedCostPct: 8, laborPct: 35,
-    sowingByZone: { 'guinean': { sow: 'Mars-Avril', harvest: 'Déc-Fév', sale: 'Toute l'année' }, 'sudanian': { sow: 'Mai-Juin', harvest: 'Fév-Avril', sale: 'Toute l'année' },  },
+    sowingByZone: { 'guinean': { sow: 'Mars-Avril', harvest: 'Déc-Fév', sale: 'Toute l\'année' }, 'sudanian': { sow: 'Mai-Juin', harvest: 'Fév-Avril', sale: 'Toute l\'année' },  },
     association: { fr: 'Manioc + arachide ou niébé', en: 'Cassava + groundnut or cowpea' },
     rotationAfter: [{ fr: 'An 2 : Légumineuse', en: 'Year 2: Legume' }, { fr: 'An 3 : Céréale', en: 'Year 3: Cereal' }],
   },
