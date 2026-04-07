@@ -22,7 +22,7 @@ export default function Landing() {
   ];
 
   const stats = [
-    { value: '21', label: lang === 'fr' ? 'Cultures analysées' : 'Crops analyzed' },
+    { value: '420+', label: lang === 'fr' ? 'Cultures analysées' : 'Crops analyzed' },
     { value: '11', label: lang === 'fr' ? 'Paramètres du sol' : 'Soil parameters' },
     { value: '30 ans', label: lang === 'fr' ? 'Normales climatiques' : 'Climate normals' },
     { value: '∞', label: lang === 'fr' ? 'Parcelles' : 'Plots' },
