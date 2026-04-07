@@ -120,25 +120,55 @@ const LOADING_STEPS = [
 
 export default function SoilAnalysis() {
   const { t, addParcel, lang } = useApp();
-  const [positions, setPositions] = useState<LatLngPoint[]>([]);
-  const [parcelName, setParcelName] = useState('');
-  const [hasIrrigation, setHasIrrigation] = useState(false);
+  // Persist analysis state across navigation / page reload
+  const [positions, setPositions] = useState<LatLngPoint[]>(() => {
+    try { const s = localStorage.getItem('agri_positions'); return s ? JSON.parse(s) : []; } catch { return []; }
+  });
+  const [parcelName, setParcelName] = useState(() => localStorage.getItem('agri_parcelName') || '');
+  const [hasIrrigation, setHasIrrigation] = useState(() => localStorage.getItem('agri_irrigation') === 'true');
   const [loading, setLoading] = useState(false);
   const [loadingStep, setLoadingStep] = useState(0);
-  const [soilData, setSoilData] = useState<SoilData | null>(null);
-  const [weather, setWeather] = useState<CurrentWeather | null>(null);
-  const [climate, setClimate] = useState<ClimateData | null>(null);
-  const [geo, setGeo] = useState<GeoLocation | null>(null);
-  const [analysis, setAnalysis] = useState<AnalysisResult | null>(null);
+  const [soilData, setSoilData] = useState<SoilData | null>(() => {
+    try { const s = localStorage.getItem('agri_soilData'); return s ? JSON.parse(s) : null; } catch { return null; }
+  });
+  const [weather, setWeather] = useState<CurrentWeather | null>(() => {
+    try { const s = localStorage.getItem('agri_weather'); return s ? JSON.parse(s) : null; } catch { return null; }
+  });
+  const [climate, setClimate] = useState<ClimateData | null>(() => {
+    try { const s = localStorage.getItem('agri_climate'); return s ? JSON.parse(s) : null; } catch { return null; }
+  });
+  const [geo, setGeo] = useState<GeoLocation | null>(() => {
+    try { const s = localStorage.getItem('agri_geo'); return s ? JSON.parse(s) : null; } catch { return null; }
+  });
+  const [analysis, setAnalysis] = useState<AnalysisResult | null>(() => {
+    try { const s = localStorage.getItem('agri_analysis'); return s ? JSON.parse(s) : null; } catch { return null; }
+  });
   const [selectedCropIdx, setSelectedCropIdx] = useState<number | null>(null);
   const [dismissedAlerts, setDismissedAlerts] = useState<Set<string>>(new Set());
   const [showRawData, setShowRawData] = useState(false);
-  const [step, setStep] = useState<'draw' | 'results'>('draw');
+  const [step, setStep] = useState<'draw' | 'results'>(() => {
+    const s = localStorage.getItem('agri_step');
+    return s === 'results' ? 'results' : 'draw';
+  });
   const [error, setError] = useState<string | null>(null);
   // Farmer custom inputs
-  const [farmerPrevCrop, setFarmerPrevCrop] = useState('');
-  const [farmerBudget, setFarmerBudget] = useState('');
-  const [farmerSoilObs, setFarmerSoilObs] = useState('');
+  const [farmerPrevCrop, setFarmerPrevCrop] = useState(() => localStorage.getItem('agri_farmerPrevCrop') || '');
+  const [farmerBudget, setFarmerBudget] = useState(() => localStorage.getItem('agri_farmerBudget') || '');
+  const [farmerSoilObs, setFarmerSoilObs] = useState(() => localStorage.getItem('agri_farmerSoilObs') || '');
+
+  // Persist to localStorage on change
+  useEffect(() => { localStorage.setItem('agri_positions', JSON.stringify(positions)); }, [positions]);
+  useEffect(() => { localStorage.setItem('agri_parcelName', parcelName); }, [parcelName]);
+  useEffect(() => { localStorage.setItem('agri_irrigation', String(hasIrrigation)); }, [hasIrrigation]);
+  useEffect(() => { if (soilData) localStorage.setItem('agri_soilData', JSON.stringify(soilData)); }, [soilData]);
+  useEffect(() => { if (weather) localStorage.setItem('agri_weather', JSON.stringify(weather)); }, [weather]);
+  useEffect(() => { if (climate) localStorage.setItem('agri_climate', JSON.stringify(climate)); }, [climate]);
+  useEffect(() => { if (geo) localStorage.setItem('agri_geo', JSON.stringify(geo)); }, [geo]);
+  useEffect(() => { if (analysis) localStorage.setItem('agri_analysis', JSON.stringify(analysis)); }, [analysis]);
+  useEffect(() => { localStorage.setItem('agri_step', step); }, [step]);
+  useEffect(() => { localStorage.setItem('agri_farmerPrevCrop', farmerPrevCrop); }, [farmerPrevCrop]);
+  useEffect(() => { localStorage.setItem('agri_farmerBudget', farmerBudget); }, [farmerBudget]);
+  useEffect(() => { localStorage.setItem('agri_farmerSoilObs', farmerSoilObs); }, [farmerSoilObs]);
   const resultsRef = useRef<HTMLDivElement>(null);
   // User geolocation for map centering
   const [userLocation, setUserLocation] = useState<[number, number] | null>(null);

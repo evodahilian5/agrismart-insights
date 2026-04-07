@@ -34,7 +34,7 @@ export default function Landing() {
       <section className="relative h-screen flex items-center justify-center overflow-hidden">
         <img src={heroImg} alt="Agricultural farmland with crops" className="absolute inset-0 w-full h-full object-cover" />
         <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-transparent to-black/50" />
-        <div className="relative z-10 text-center px-4 max-w-4xl mx-auto">
+        <div className="relative z-10 text-right px-6 sm:px-12 lg:px-20 max-w-6xl ml-auto mr-4 sm:mr-8 lg:mr-16">
           <motion.div initial={{ opacity: 0, y: 40 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8 }}>
             <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-black/30 backdrop-blur-sm border border-white/20 mb-8">
               <Leaf className="w-4 h-4 text-green-400" />
@@ -47,12 +47,12 @@ export default function Landing() {
                 <>Smart Agriculture,<br /><span className="text-green-400">Concrete</span> Results</>
               )}
             </h1>
-            <p className="text-lg sm:text-xl text-white/90 max-w-2xl mx-auto mb-10 leading-relaxed drop-shadow-md">
+            <p className="text-lg sm:text-xl text-white/90 max-w-2xl ml-auto mb-10 leading-relaxed drop-shadow-md">
               {lang === 'fr'
                 ? "Optimisez vos rendements tout en réduisant vos apports d'intrants et connectez-vous au marché agricole."
                 : 'Optimize your yields while reducing input costs and connect to the agricultural market.'}
             </p>
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+            <div className="flex flex-col sm:flex-row items-center justify-end gap-4">
               <Link to="/auth?role=farmer" className="w-full sm:w-auto px-8 py-4 rounded-2xl text-lg font-bold bg-green-gradient text-white hover:opacity-90 transition-all shadow-lg flex items-center justify-center gap-2">
                 {t('landing.farmer')} <ArrowRight className="w-5 h-5" />
               </Link>
