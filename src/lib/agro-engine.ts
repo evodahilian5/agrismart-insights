@@ -52,6 +52,14 @@ export interface CropScore {
   yieldHigh: number;
   yieldLowPerHa: number;
   yieldHighPerHa: number;
+  // Per-hectare economics (local currency)
+  revenuePerHaLow: number;
+  revenuePerHaHigh: number;
+  costsPerHaLow: number;
+  costsPerHaHigh: number;
+  marginPerHaLow: number;
+  marginPerHaHigh: number;
+  // Total economics for full parcel (local currency)
   revenueLow: number;
   revenueHigh: number;
   costsLow: number;
@@ -65,9 +73,29 @@ export interface CropScore {
     phyto: number;
     transport: number;
   };
+  costBreakdownPerHa: {
+    seeds: number;
+    labor: number;
+    fertilizer: number;
+    phyto: number;
+    transport: number;
+  };
   pricePerTon: number;
   pricePerTonLocal: number;
   forecastYear: number;
+  currencySymbol: string;
+  economicNotes: {
+    yield: { fr: string; en: string };
+    revenue: { fr: string; en: string };
+    costs: { fr: string; en: string };
+    margin: { fr: string; en: string };
+    price: { fr: string; en: string };
+    seeds: { fr: string; en: string };
+    labor: { fr: string; en: string };
+    fertilizer: { fr: string; en: string };
+    phyto: { fr: string; en: string };
+    transport: { fr: string; en: string };
+  };
   sowingWindow: { fr: string; en: string };
   cycleDays: number;
   harvestWindow: { fr: string; en: string };
