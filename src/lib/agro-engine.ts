@@ -6099,14 +6099,20 @@ const ZONE_DESC: Record<AgroZone, { fr: string; en: string }> = {
   },
 };
 
-// ─── SCORING WEIGHTS BY ZONE ─────────────────────────────────────────────────
+// ─── SCORING WEIGHTS BY ZONE (15 parameters — total = 100 per zone) ─────────
 
-const ZONE_WEIGHTS: Record<AgroZone, { rain: number; temp: number; ph: number; texture: number; nitrogen: number }> = {
-  sahelian: { rain: 40, temp: 15, ph: 25, texture: 15, nitrogen: 5 },
-  sudanian: { rain: 30, ph: 25, texture: 20, temp: 15, nitrogen: 10 },
-  guinean: { texture: 30, ph: 25, nitrogen: 20, temp: 15, rain: 10 },
-  mediterranean: { rain: 35, temp: 20, ph: 25, texture: 15, nitrogen: 5 },
-  mountain_med: { rain: 30, temp: 25, ph: 25, texture: 15, nitrogen: 5 },
+interface ZoneWeights {
+  rain: number; temp: number; ph: number; texture: number; nitrogen: number;
+  cec: number; soc: number; humidity: number; solar: number; waterBalance: number;
+  altitude: number; cfvo: number; bdod: number; silt: number; thermalAmp: number;
+}
+
+const ZONE_WEIGHTS: Record<AgroZone, ZoneWeights> = {
+  sahelian:       { rain: 18, temp: 8, ph: 12, texture: 8, nitrogen: 5, cec: 5, soc: 5, humidity: 4, solar: 3, waterBalance: 12, altitude: 2, cfvo: 3, bdod: 5, silt: 5, thermalAmp: 5 },
+  sudanian:       { rain: 14, temp: 7, ph: 12, texture: 9, nitrogen: 7, cec: 6, soc: 7, humidity: 4, solar: 3, waterBalance: 8, altitude: 2, cfvo: 3, bdod: 5, silt: 6, thermalAmp: 7 },
+  guinean:        { rain: 6, temp: 7, ph: 12, texture: 12, nitrogen: 8, cec: 7, soc: 8, humidity: 5, solar: 4, waterBalance: 4, altitude: 2, cfvo: 3, bdod: 5, silt: 8, thermalAmp: 9 },
+  mediterranean:  { rain: 16, temp: 10, ph: 12, texture: 7, nitrogen: 5, cec: 5, soc: 5, humidity: 5, solar: 5, waterBalance: 10, altitude: 4, cfvo: 3, bdod: 4, silt: 4, thermalAmp: 5 },
+  mountain_med:   { rain: 14, temp: 12, ph: 12, texture: 7, nitrogen: 5, cec: 5, soc: 5, humidity: 4, solar: 4, waterBalance: 8, altitude: 8, cfvo: 3, bdod: 4, silt: 4, thermalAmp: 5 },
 };
 
 // ─── ZONE-SPECIFIC FARMING SYSTEM RECOMMENDATIONS ──────────────────────────
@@ -6182,6 +6188,125 @@ function calcNitrogenScore(nKgHa: number): number {
   if (nKgHa >= 40) return 65;
   if (nKgHa >= 20) return 45;
   return 25;
+}
+
+// ─── NEW SUB-SCORE CALCULATORS (CEC, SOC, humidity, solar, waterBalance, altitude, cfvo, bdod, silt, thermalAmp) ─
+
+function calcCecScore(cec: number, crop: CropRef): number {
+  // CEC < 5 = very poor retention; 5-15 moderate; 15-25 good; >25 excellent (FAO)
+  // Tubers/vegetables need higher CEC; cereals tolerate lower
+  const needsHigh = ['vegetables', 'fruits', 'tubers'].includes(crop.category);
+  const minGood = needsHigh ? 12 : 8;
+  if (cec >= 25) return 100;
+  if (cec >= minGood) return Math.round(70 + (cec - minGood) / (25 - minGood) * 30);
+  if (cec >= 5) return Math.round(40 + (cec - 5) / (minGood - 5) * 30);
+  return Math.max(10, Math.round(cec / 5 * 40));
+}
+
+function calcSocScore(soc: number): number {
+  // SOC g/kg: <5 very poor, 5-10 poor, 10-20 moderate, 20-30 good, >30 excellent (ISRIC)
+  if (soc >= 30) return 100;
+  if (soc >= 20) return 90;
+  if (soc >= 10) return 70;
+  if (soc >= 5) return 50;
+  return Math.max(10, Math.round(soc / 5 * 50));
+}
+
+function calcHumidityScore(humidity: number, crop: CropRef): number {
+  // Dry crops (cereals in Sahel) prefer 30-60%; humid crops (rice, cacao) prefer 70-90%
+  const needsHumid = crop.rainMin > 1000 || ['fruits'].includes(crop.category);
+  if (needsHumid) {
+    if (humidity >= 70 && humidity <= 90) return 100;
+    if (humidity >= 60) return 80;
+    if (humidity >= 50) return 60;
+    return Math.max(20, Math.round(humidity / 50 * 60));
+  }
+  // Standard crops
+  if (humidity >= 50 && humidity <= 80) return 100;
+  if (humidity >= 35 && humidity <= 90) return 80;
+  if (humidity < 35) return Math.max(30, Math.round(humidity / 35 * 80));
+  return 60; // >90% = fungal risk
+}
+
+function calcSolarScore(solar: number, crop: CropRef): number {
+  // MJ/m²/day: <12 low, 12-18 moderate, 18-24 good, >24 excessive
+  if (crop.isPhotosensitive) {
+    if (solar >= 18 && solar <= 26) return 100;
+    if (solar >= 14) return 75;
+    return Math.max(30, Math.round(solar / 14 * 75));
+  }
+  if (solar >= 14 && solar <= 26) return 100;
+  if (solar >= 10) return 75;
+  return Math.max(30, Math.round(solar / 10 * 75));
+}
+
+function calcWaterBalanceScore(deficitMonths: number, wetMonths: number, crop: CropRef): number {
+  // Score based on how well water availability matches crop cycle
+  const cycleMonths = Math.ceil(crop.cycleDays / 30);
+  const availableWet = wetMonths;
+  if (availableWet >= cycleMonths + 1) return 100;
+  if (availableWet >= cycleMonths) return 85;
+  if (availableWet >= cycleMonths - 1) return 65;
+  if (availableWet >= cycleMonths - 2) return 45;
+  return Math.max(10, Math.round(availableWet / cycleMonths * 45));
+}
+
+function calcAltitudeScore(altitude: number, crop: CropRef): number {
+  // Most tropical crops: 0-800m optimal, 800-1500 ok, >1500 penalty
+  // Med crops: 0-1200 optimal
+  const isMed = crop.zones.includes('mediterranean') || crop.zones.includes('mountain_med');
+  const maxOpt = isMed ? 1200 : 800;
+  const maxTol = isMed ? 2000 : 1500;
+  if (altitude <= maxOpt) return 100;
+  if (altitude <= maxTol) return Math.round(100 - (altitude - maxOpt) / (maxTol - maxOpt) * 40);
+  return Math.max(20, Math.round(60 - (altitude - maxTol) / 500 * 30));
+}
+
+function calcCfvoScore(cfvo: number, crop: CropRef): number {
+  // Coarse fragments (%): <5 ideal, 5-15 ok, 15-30 difficult, >30 very difficult
+  // Tubers especially penalized
+  const penalty = crop.isTuber ? 1.5 : 1.0;
+  if (cfvo <= 5) return 100;
+  if (cfvo <= 15) return Math.round(100 - (cfvo - 5) * 2 * penalty);
+  if (cfvo <= 30) return Math.max(20, Math.round(80 - (cfvo - 15) * 3 * penalty));
+  return Math.max(5, Math.round(35 - (cfvo - 30) * 2 * penalty));
+}
+
+function calcBdodScore(bdod: number, crop: CropRef): number {
+  // Bulk density g/cm³: 1.0-1.4 ideal, 1.4-1.6 compacting, >1.6 compacted (FAO)
+  // Deep-rooted crops more affected
+  const penalty = crop.deepRooted ? 1.3 : 1.0;
+  if (bdod >= 1.0 && bdod <= 1.35) return 100;
+  if (bdod <= 1.5) return Math.round(100 - (bdod - 1.35) * 200 * penalty);
+  if (bdod <= 1.65) return Math.max(20, Math.round(70 - (bdod - 1.5) * 300 * penalty));
+  return Math.max(5, Math.round(25 - (bdod - 1.65) * 100));
+}
+
+function calcSiltScore(silt: number, crop: CropRef): number {
+  // Silt %: too much = crusting risk; optimal varies by crop
+  // Most crops: 20-40% ideal
+  if (silt >= 20 && silt <= 40) return 100;
+  if (silt >= 10 && silt <= 50) return 80;
+  if (silt > 50) return Math.max(30, Math.round(80 - (silt - 50) * 2.5));
+  return Math.max(40, Math.round(80 - (20 - silt) * 2));
+}
+
+function calcThermalAmpScore(coldest: number, hottest: number, crop: CropRef): number {
+  // Thermal amplitude = hottest - coldest month
+  // Too large = stress; moderate = good vernalization for some crops
+  const amp = hottest - coldest;
+  const isTropical = crop.tempOpt[0] >= 22;
+  if (isTropical) {
+    // Tropical crops prefer low amplitude (<10°C)
+    if (amp <= 8) return 100;
+    if (amp <= 12) return 85;
+    if (amp <= 18) return 65;
+    return Math.max(30, Math.round(65 - (amp - 18) * 3));
+  }
+  // Temperate/med crops tolerate higher amplitude
+  if (amp >= 5 && amp <= 15) return 100;
+  if (amp <= 20) return 80;
+  return Math.max(40, Math.round(80 - (amp - 20) * 3));
 }
 
 // ─── RISK ASSESSMENT ─────────────────────────────────────────────────────────
