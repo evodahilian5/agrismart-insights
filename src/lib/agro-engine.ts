@@ -206,7 +206,7 @@ const CROPS: Record<string, CropRef> = {
     yields: { 'mediterranean': [2.0, 4.5], 'mountain_med': [1.5, 3.5] },
     priceUSD: 320, seedCostPct: 8, laborPct: 30,
     sowingByZone: { 'mediterranean': { sow: 'Oct-Nov', harvest: 'Mai-Juin', sale: 'Juin-Sept' }, 'mountain_med': { sow: 'Oct-Nov', harvest: 'Juin-Juil', sale: 'Juil-Sept' },  },
-    association: { fr: 'Blé + légumineuses d\'hiver', en: 'Wheat + winter legumes' },
+    association: { fr: "Blé + légumineuses d'hiver", en: 'Wheat + winter legumes' },
     rotationAfter: [{ fr: 'An 2 : Légumineuse', en: 'Year 2: Legume' }, { fr: 'An 3 : Céréale', en: 'Year 3: Cereal' }],
   },
   wheat_bread: {
@@ -560,7 +560,7 @@ const CROPS: Record<string, CropRef> = {
     rotationAfter: [{ fr: 'An 2 : Légumineuse', en: 'Year 2: Legume' }, { fr: 'An 3 : Céréale', en: 'Year 3: Cereal' }],
   },
   pigeon_pea: {
-    name: { fr: 'Pois d\'Angole', en: 'Pigeon Pea' }, category: 'legumes',
+    name: { fr: "Pois d'Angole", en: 'Pigeon Pea' }, category: 'legumes',
     phOpt: [5.0, 7.5], phTol: [4.5, 8.0],
     tempOpt: [22, 35], tempTol: [18, 38],
     rainMin: 500, rainMax: 1500, clayOpt: [5, 40], sandOpt: [20, 70],
@@ -570,7 +570,7 @@ const CROPS: Record<string, CropRef> = {
     yields: { 'sudanian': [0.6, 1.2], 'guinean': [0.8, 1.5] },
     priceUSD: 600, seedCostPct: 8, laborPct: 35,
     sowingByZone: {  },
-    association: { fr: 'Pois d\'Angole + sorgho', en: 'Pigeon pea + sorghum' },
+    association: { fr: "Pois d'Angole + sorgho", en: 'Pigeon pea + sorghum' },
     rotationAfter: [{ fr: 'An 2 : Légumineuse', en: 'Year 2: Legume' }, { fr: 'An 3 : Céréale', en: 'Year 3: Cereal' }],
   },
   lima_bean: {
@@ -630,7 +630,7 @@ const CROPS: Record<string, CropRef> = {
     rotationAfter: [{ fr: 'An 2 : Légumineuse', en: 'Year 2: Legume' }, { fr: 'An 3 : Céréale', en: 'Year 3: Cereal' }],
   },
   lablab: {
-    name: { fr: 'Dolique d\'Égypte', en: 'Lablab' }, category: 'legumes',
+    name: { fr: "Dolique d'Égypte", en: 'Lablab' }, category: 'legumes',
     phOpt: [5.5, 7.5], phTol: [5.0, 8.0],
     tempOpt: [22, 35], tempTol: [18, 38],
     rainMin: 400, rainMax: 1500, clayOpt: [5, 40], sandOpt: [20, 70],
@@ -640,7 +640,7 @@ const CROPS: Record<string, CropRef> = {
     yields: { 'sudanian': [0.5, 1.0], 'guinean': [0.8, 1.5] },
     priceUSD: 500, seedCostPct: 8, laborPct: 35,
     sowingByZone: {  },
-    association: { fr: 'Dolique d\'Égypte en rotation standard', en: 'Lablab in standard rotation' },
+    association: { fr: "Dolique d'Égypte en rotation standard", en: 'Lablab in standard rotation' },
     rotationAfter: [{ fr: 'An 2 : Légumineuse', en: 'Year 2: Legume' }, { fr: 'An 3 : Céréale', en: 'Year 3: Cereal' }],
   },
   velvet_bean: {
@@ -1792,7 +1792,7 @@ const CROPS: Record<string, CropRef> = {
     rotationAfter: [{ fr: 'An 2 : Légumineuse', en: 'Year 2: Legume' }, { fr: 'An 3 : Céréale', en: 'Year 3: Cereal' }],
   },
   water_spinach: {
-    name: { fr: 'Liseron d\'eau', en: 'Water Spinach' }, category: 'vegetables',
+    name: { fr: "Liseron d'eau", en: 'Water Spinach' }, category: 'vegetables',
     phOpt: [5.5, 7.0], phTol: [5.0, 7.5],
     tempOpt: [22, 32], tempTol: [20, 35],
     rainMin: 800, rainMax: 2500, clayOpt: [15, 50], sandOpt: [10, 45],
@@ -1802,7 +1802,7 @@ const CROPS: Record<string, CropRef> = {
     yields: { 'guinean': [10.0, 25.0] },
     priceUSD: 300, seedCostPct: 8, laborPct: 35,
     sowingByZone: {  },
-    association: { fr: 'Liseron d\'eau en rotation standard', en: 'Water Spinach in standard rotation' },
+    association: { fr: "Liseron d'eau en rotation standard", en: 'Water Spinach in standard rotation' },
     rotationAfter: [{ fr: 'An 2 : Légumineuse', en: 'Year 2: Legume' }, { fr: 'An 3 : Céréale', en: 'Year 3: Cereal' }],
   },
   kangkong: {
@@ -1848,7 +1848,7 @@ const CROPS: Record<string, CropRef> = {
     rotationAfter: [{ fr: 'An 2 : Légumineuse', en: 'Year 2: Legume' }, { fr: 'An 3 : Céréale', en: 'Year 3: Cereal' }],
   },
   jew_mallow: {
-    name: { fr: 'Molokheya', en: 'Jew\'s Mallow' }, category: 'vegetables',
+    name: { fr: 'Molokheya', en: "Jew's Mallow" }, category: 'vegetables',
     phOpt: [5.5, 7.5], phTol: [5.0, 8.0],
     tempOpt: [22, 35], tempTol: [18, 38],
     rainMin: 300, rainMax: 1000, clayOpt: [10, 35], sandOpt: [25, 60],
@@ -1858,7 +1858,7 @@ const CROPS: Record<string, CropRef> = {
     yields: { 'sahelian': [3.0, 6.0], 'sudanian': [5.0, 10.0], 'mediterranean': [6.0, 12.0] },
     priceUSD: 400, seedCostPct: 8, laborPct: 35,
     sowingByZone: {  },
-    association: { fr: 'Molokheya en rotation standard', en: 'Jew\'s Mallow in standard rotation' },
+    association: { fr: 'Molokheya en rotation standard', en: "Jew's Mallow in standard rotation" },
     rotationAfter: [{ fr: 'An 2 : Légumineuse', en: 'Year 2: Legume' }, { fr: 'An 3 : Céréale', en: 'Year 3: Cereal' }],
   },
   tomatillo: {
@@ -2642,7 +2642,7 @@ const CROPS: Record<string, CropRef> = {
     yields: { 'mediterranean': [2.0, 4.0] },
     priceUSD: 1500, seedCostPct: 5, laborPct: 30,
     sowingByZone: {  },
-    association: { fr: 'Olivier + légumineuses d\'hiver', en: 'Olive + winter legumes' },
+    association: { fr: "Olivier + légumineuses d'hiver", en: 'Olive + winter legumes' },
     rotationAfter: [{ fr: 'An 2 : Légumineuse', en: 'Year 2: Legume' }, { fr: 'An 3 : Céréale', en: 'Year 3: Cereal' }],
   },
   cacao: {
@@ -3836,7 +3836,7 @@ const CROPS: Record<string, CropRef> = {
     rotationAfter: [{ fr: 'An 2 : Légumineuse', en: 'Year 2: Legume' }, { fr: 'An 3 : Céréale', en: 'Year 3: Cereal' }],
   },
   devil_claw: {
-    name: { fr: 'Griffe du diable', en: 'Devil\'s Claw' }, category: 'medicinal',
+    name: { fr: 'Griffe du diable', en: "Devil's Claw" }, category: 'medicinal',
     phOpt: [6.0, 8.0], phTol: [5.5, 8.5],
     tempOpt: [22, 35], tempTol: [18, 40],
     rainMin: 200, rainMax: 600, clayOpt: [5, 25], sandOpt: [35, 75],
@@ -3846,7 +3846,7 @@ const CROPS: Record<string, CropRef> = {
     yields: { 'sahelian': [0.1, 0.3] },
     priceUSD: 8000, seedCostPct: 8, laborPct: 35,
     sowingByZone: {  },
-    association: { fr: 'Griffe du diable en rotation standard', en: 'Devil\'s Claw in standard rotation' },
+    association: { fr: 'Griffe du diable en rotation standard', en: "Devil's Claw in standard rotation" },
     rotationAfter: [{ fr: 'An 2 : Légumineuse', en: 'Year 2: Legume' }, { fr: 'An 3 : Céréale', en: 'Year 3: Cereal' }],
   },
   rooibos: {
@@ -4116,7 +4116,7 @@ const CROPS: Record<string, CropRef> = {
     rotationAfter: [{ fr: 'An 2 : Légumineuse', en: 'Year 2: Legume' }, { fr: 'An 3 : Céréale', en: 'Year 3: Cereal' }],
   },
   marigold: {
-    name: { fr: 'Œillet d\'Inde', en: 'Marigold' }, category: 'flowers',
+    name: { fr: "Œillet d'Inde", en: 'Marigold' }, category: 'flowers',
     phOpt: [5.5, 7.5], phTol: [5.0, 8.0],
     tempOpt: [18, 28], tempTol: [15, 32],
     rainMin: 400, rainMax: 900, clayOpt: [10, 35], sandOpt: [25, 55],
@@ -4126,7 +4126,7 @@ const CROPS: Record<string, CropRef> = {
     yields: { 'sudanian': [2.0, 5.0], 'mediterranean': [3.0, 8.0] },
     priceUSD: 2000, seedCostPct: 8, laborPct: 35,
     sowingByZone: {  },
-    association: { fr: 'Œillet d\'Inde en rotation standard', en: 'Marigold in standard rotation' },
+    association: { fr: "Œillet d'Inde en rotation standard", en: 'Marigold in standard rotation' },
     rotationAfter: [{ fr: 'An 2 : Légumineuse', en: 'Year 2: Legume' }, { fr: 'An 3 : Céréale', en: 'Year 3: Cereal' }],
   },
   jasmine: {
@@ -4326,7 +4326,7 @@ const CROPS: Record<string, CropRef> = {
     rotationAfter: [{ fr: 'An 2 : Légumineuse', en: 'Year 2: Legume' }, { fr: 'An 3 : Céréale', en: 'Year 3: Cereal' }],
   },
   adlay: {
-    name: { fr: 'Larme de Job', en: 'Job\'s Tears' }, category: 'cereals',
+    name: { fr: 'Larme de Job', en: "Job's Tears" }, category: 'cereals',
     phOpt: [5.0, 7.0], phTol: [4.5, 7.5],
     tempOpt: [22, 30], tempTol: [18, 35],
     rainMin: 800, rainMax: 2000, clayOpt: [10, 40], sandOpt: [20, 55],
@@ -4336,7 +4336,7 @@ const CROPS: Record<string, CropRef> = {
     yields: { 'guinean': [1.0, 2.5] },
     priceUSD: 600, seedCostPct: 8, laborPct: 35,
     sowingByZone: { },
-    association: { fr: 'Larme de Job en rotation standard', en: 'Job\'s Tears in standard rotation' },
+    association: { fr: 'Larme de Job en rotation standard', en: "Job's Tears in standard rotation" },
     rotationAfter: [{ fr: 'An 2 : Légumineuse', en: 'Year 2: Legume' }, { fr: 'An 3 : Céréale', en: 'Year 3: Cereal' }],
   },
   durum_pasta: {
@@ -4410,7 +4410,7 @@ const CROPS: Record<string, CropRef> = {
     rotationAfter: [{ fr: 'An 2 : Légumineuse', en: 'Year 2: Legume' }, { fr: 'An 3 : Céréale', en: 'Year 3: Cereal' }],
   },
   runner_bean: {
-    name: { fr: 'Haricot d\'Espagne', en: 'Runner Bean' }, category: 'legumes',
+    name: { fr: "Haricot d'Espagne", en: 'Runner Bean' }, category: 'legumes',
     phOpt: [5.5, 7.0], phTol: [5.0, 7.5],
     tempOpt: [15, 25], tempTol: [10, 30],
     rainMin: 500, rainMax: 1200, clayOpt: [10, 35], sandOpt: [25, 55],
@@ -4420,7 +4420,7 @@ const CROPS: Record<string, CropRef> = {
     yields: { 'mountain_med': [1.0, 2.5] },
     priceUSD: 500, seedCostPct: 8, laborPct: 35,
     sowingByZone: { },
-    association: { fr: 'Haricot d\'Espagne en rotation standard', en: 'Runner Bean in standard rotation' },
+    association: { fr: "Haricot d'Espagne en rotation standard", en: 'Runner Bean in standard rotation' },
     rotationAfter: [{ fr: 'An 2 : Légumineuse', en: 'Year 2: Legume' }, { fr: 'An 3 : Céréale', en: 'Year 3: Cereal' }],
   },
   tepary_bean: {
@@ -4522,7 +4522,7 @@ const CROPS: Record<string, CropRef> = {
     rotationAfter: [{ fr: 'An 2 : Légumineuse', en: 'Year 2: Legume' }, { fr: 'An 3 : Céréale', en: 'Year 3: Cereal' }],
   },
   water_chestnut: {
-    name: { fr: 'Châtaigne d\'eau', en: 'Water Chestnut' }, category: 'tubers',
+    name: { fr: "Châtaigne d'eau", en: 'Water Chestnut' }, category: 'tubers',
     phOpt: [6.0, 7.0], phTol: [5.5, 7.5],
     tempOpt: [22, 30], tempTol: [18, 32],
     rainMin: 1000, rainMax: 2500, clayOpt: [20, 50], sandOpt: [10, 40],
@@ -4532,7 +4532,7 @@ const CROPS: Record<string, CropRef> = {
     yields: { 'guinean': [5.0, 12.0] },
     priceUSD: 400, seedCostPct: 8, laborPct: 35,
     sowingByZone: { },
-    association: { fr: 'Châtaigne d\'eau en rotation standard', en: 'Water Chestnut in standard rotation' },
+    association: { fr: "Châtaigne d'eau en rotation standard", en: 'Water Chestnut in standard rotation' },
     rotationAfter: [{ fr: 'An 2 : Légumineuse', en: 'Year 2: Legume' }, { fr: 'An 3 : Céréale', en: 'Year 3: Cereal' }],
   },
   lotus_root: {
@@ -5320,7 +5320,7 @@ const CROPS: Record<string, CropRef> = {
     rotationAfter: [{ fr: 'An 2 : Légumineuse', en: 'Year 2: Legume' }, { fr: 'An 3 : Céréale', en: 'Year 3: Cereal' }],
   },
   african_cherry: {
-    name: { fr: 'Cerise d\'Afrique', en: 'African Cherry' }, category: 'fruits',
+    name: { fr: "Cerise d'Afrique", en: 'African Cherry' }, category: 'fruits',
     phOpt: [5.0, 6.5], phTol: [4.5, 7.0],
     tempOpt: [18, 25], tempTol: [15, 30],
     rainMin: 1000, rainMax: 2000, clayOpt: [15, 40], sandOpt: [20, 50],
@@ -5330,7 +5330,7 @@ const CROPS: Record<string, CropRef> = {
     yields: { 'guinean': [3.0, 8.0] },
     priceUSD: 800, seedCostPct: 8, laborPct: 35,
     sowingByZone: { },
-    association: { fr: 'Cerise d\'Afrique en rotation standard', en: 'African Cherry in standard rotation' },
+    association: { fr: "Cerise d'Afrique en rotation standard", en: 'African Cherry in standard rotation' },
     rotationAfter: [{ fr: 'An 2 : Légumineuse', en: 'Year 2: Legume' }, { fr: 'An 3 : Céréale', en: 'Year 3: Cereal' }],
   },
   bush_mango: {
@@ -5712,7 +5712,7 @@ const CROPS: Record<string, CropRef> = {
     rotationAfter: [{ fr: 'An 2 : Légumineuse', en: 'Year 2: Legume' }, { fr: 'An 3 : Céréale', en: 'Year 3: Cereal' }],
   },
   cat_claw: {
-    name: { fr: 'Griffe de chat', en: 'Cat\'s Claw' }, category: 'medicinal',
+    name: { fr: 'Griffe de chat', en: "Cat's Claw" }, category: 'medicinal',
     phOpt: [5.0, 7.0], phTol: [4.5, 7.5],
     tempOpt: [22, 28], tempTol: [18, 32],
     rainMin: 1500, rainMax: 3000, clayOpt: [15, 40], sandOpt: [15, 50],
@@ -5722,7 +5722,7 @@ const CROPS: Record<string, CropRef> = {
     yields: { 'guinean': [0.3, 0.8] },
     priceUSD: 5000, seedCostPct: 8, laborPct: 35,
     sowingByZone: { },
-    association: { fr: 'Griffe de chat en rotation standard', en: 'Cat\'s Claw in standard rotation' },
+    association: { fr: 'Griffe de chat en rotation standard', en: "Cat's Claw in standard rotation" },
     rotationAfter: [{ fr: 'An 2 : Légumineuse', en: 'Year 2: Legume' }, { fr: 'An 3 : Céréale', en: 'Year 3: Cereal' }],
   },
   noni: {
@@ -5908,7 +5908,7 @@ const CROPS: Record<string, CropRef> = {
     rotationAfter: [{ fr: 'An 2 : Légumineuse', en: 'Year 2: Legume' }, { fr: 'An 3 : Céréale', en: 'Year 3: Cereal' }],
   },
   st_johns_wort: {
-    name: { fr: 'Millepertuis', en: 'St John\'s Wort' }, category: 'medicinal',
+    name: { fr: 'Millepertuis', en: "St John's Wort" }, category: 'medicinal',
     phOpt: [5.5, 7.5], phTol: [5.0, 8.0],
     tempOpt: [12, 22], tempTol: [8, 28],
     rainMin: 400, rainMax: 800, clayOpt: [10, 35], sandOpt: [25, 55],
@@ -5918,7 +5918,7 @@ const CROPS: Record<string, CropRef> = {
     yields: { 'mediterranean': [0.5, 1.5] },
     priceUSD: 5000, seedCostPct: 8, laborPct: 35,
     sowingByZone: { },
-    association: { fr: 'Millepertuis en rotation standard', en: 'St John\'s Wort in standard rotation' },
+    association: { fr: 'Millepertuis en rotation standard', en: "St John's Wort in standard rotation" },
     rotationAfter: [{ fr: 'An 2 : Légumineuse', en: 'Year 2: Legume' }, { fr: 'An 3 : Céréale', en: 'Year 3: Cereal' }],
   },
   skullcap: {
@@ -6082,15 +6082,15 @@ const ZONE_DESC: Record<AgroZone, { fr: string; en: string }> = {
     en: 'Semi-humid climate with a 4 to 7 month rainy season. Good crop diversity possible.',
   },
   guinean: {
-    fr: 'Climat humide avec abondance d\'eau. Idéal pour les tubercules, le riz pluvial et les cultures pérennes.',
+    fr: "Climat humide avec abondance d'eau. Idéal pour les tubercules, le riz pluvial et les cultures pérennes.",
     en: 'Humid climate with abundant water. Ideal for tubers, rainfed rice, and perennial crops.',
   },
   mediterranean: {
-    fr: 'Climat méditerranéen avec pluies hivernales et étés secs. Cultures d\'automne-hiver recommandées.',
+    fr: "Climat méditerranéen avec pluies hivernales et étés secs. Cultures d'automne-hiver recommandées.",
     en: 'Mediterranean climate with winter rains and dry summers. Autumn-winter crops recommended.',
   },
   mountain_med: {
-    fr: 'Climat de montagne méditerranéen avec altitude élevée. Températures corrigées pour l\'altitude.',
+    fr: "Climat de montagne méditerranéen avec altitude élevée. Températures corrigées pour l'altitude.",
     en: 'Mediterranean mountain climate with high altitude. Temperatures corrected for elevation.',
   },
 };
@@ -6109,11 +6109,11 @@ const ZONE_WEIGHTS: Record<AgroZone, { rain: number; temp: number; ph: number; t
 
 const ZONE_SYSTEM: Record<AgroZone, { fr: string; en: string }> = {
   sahelian: {
-    fr: 'Système Zaï recommandé (microcuvettes de captage d\'eau) + intégration de Faidherbia albida (+15 à 30% rendement sans coût d\'intrant, CIRAD 2020)',
+    fr: "Système Zaï recommandé (microcuvettes de captage d'eau) + intégration de Faidherbia albida (+15 à 30% rendement sans coût d\"intrant, CIRAD 2020)',
     en: 'Zaï system recommended (micro-basins for water harvesting) + Faidherbia albida integration (+15-30% yield at no input cost, CIRAD 2020)',
   },
   sudanian: {
-    fr: 'Bandes alternées légumineuses/céréales espacées de 10-15m pour limiter l\'érosion et maintenir la fertilité',
+    fr: "Bandes alternées légumineuses/céréales espacées de 10-15m pour limiter l'érosion et maintenir la fertilité",
     en: 'Alternating legume/cereal strips 10-15m apart to limit erosion and maintain fertility',
   },
   guinean: {
@@ -6121,11 +6121,11 @@ const ZONE_SYSTEM: Record<AgroZone, { fr: string; en: string }> = {
     en: 'Agroforestry systems integrating fruit trees (mango, avocado) with annual crops to diversify income and protect soil',
   },
   mediterranean: {
-    fr: 'Association olivier + légumineuses annuelles d\'hiver (pois chiche, fève) pour optimiser l\'occupation du sol',
+    fr: "Association olivier + légumineuses annuelles d'hiver (pois chiche, fève) pour optimiser l\"occupation du sol',
     en: 'Olive + winter annual legumes (chickpea, fava) association to optimize land use',
   },
   mountain_med: {
-    fr: 'Terrasses en courbes de niveau + cultures adaptées à l\'altitude avec légumineuses fixatrices d\'azote',
+    fr: "Terrasses en courbes de niveau + cultures adaptées à l'altitude avec légumineuses fixatrices d\"azote',
     en: 'Level-curve terraces + altitude-adapted crops with nitrogen-fixing legumes',
   },
 };
@@ -6195,7 +6195,7 @@ function assessRisks(soil: SoilData, climate: ClimateData, zone: AgroZone, geo: 
         en: 'Low nitrogen + sandy soil in Sahelo-Sudanian zone. This parasite reduces yields by 50-100% on millet, sorghum, and maize.',
       },
       recommendations: {
-        fr: ['Utiliser des variétés résistantes (IITA, CIRAD)', 'Apport d\'azote précoce', 'Rotation avec légumineuses'],
+        fr: ['Utiliser des variétés résistantes (IITA, CIRAD)', "Apport d'azote précoce", 'Rotation avec légumineuses'],
         en: ['Use resistant varieties (IITA, CIRAD)', 'Early nitrogen application', 'Rotate with legumes'],
       },
     });
@@ -6276,7 +6276,7 @@ function assessAlerts(weather: CurrentWeather | null, climate: ClimateData, zone
       type: 'water_deficit', level: 'orange',
       title: { fr: '💧 Déficit hydrique', en: '💧 Water deficit' },
       description: {
-        fr: 'Peu de pluie en pleine saison humide. Irriguer si possible ou pailler pour limiter l\'évaporation.',
+        fr: "Peu de pluie en pleine saison humide. Irriguer si possible ou pailler pour limiter l'évaporation.",
         en: 'Low rainfall during rainy season. Irrigate if possible or mulch to limit evaporation.',
       },
     });
@@ -6296,7 +6296,7 @@ function assessAlerts(weather: CurrentWeather | null, climate: ClimateData, zone
   if (weather.wind_speed > 8 && zone === 'sahelian') {
     alerts.push({
       type: 'wind_erosion', level: 'orange',
-      title: { fr: '💨 Risque d\'érosion éolienne', en: '💨 Wind erosion risk' },
+      title: { fr: "💨 Risque d'érosion éolienne", en: '💨 Wind erosion risk' },
       description: {
         fr: `Vent ${weather.wind_speed} m/s en zone sahélienne. Surveillez les jeunes plants.`,
         en: `Wind ${weather.wind_speed} m/s in Sahelian zone. Watch young plants.`,
@@ -6319,7 +6319,7 @@ function buildSoilInterpretations(soil: SoilData): AnalysisResult['soilInterpret
   interps.push({ label: 'pH', value: soil.ph.toFixed(1), interpretation: { fr: `pH ${soil.ph.toFixed(1)} — sol ${phLevel.fr}`, en: `pH ${soil.ph.toFixed(1)} — ${phLevel.en} soil` } });
 
   const nLevel = soil.nitrogenKgHa > 80 ? { fr: 'bon niveau, entretien suffisant', en: 'good level, maintenance sufficient' } :
-    soil.nitrogenKgHa > 50 ? { fr: 'niveau modéré, un apport d\'entretien est conseillé', en: 'moderate level, maintenance input recommended' } :
+    soil.nitrogenKgHa > 50 ? { fr: "niveau modéré, un apport d'entretien est conseillé", en: 'moderate level, maintenance input recommended' } :
     { fr: 'niveau faible, apport organique + azoté indispensable', en: 'low level, organic + nitrogen input essential' };
   interps.push({ label: 'Azote', value: `${soil.nitrogenKgHa.toFixed(0)} kg/ha`, interpretation: { fr: `Azote disponible : ${soil.nitrogenKgHa.toFixed(0)} kg/ha — ${nLevel.fr}`, en: `Available nitrogen: ${soil.nitrogenKgHa.toFixed(0)} kg/ha — ${nLevel.en}` } });
 
@@ -6329,7 +6329,7 @@ function buildSoilInterpretations(soil: SoilData): AnalysisResult['soilInterpret
     { fr: 'correct', en: 'adequate' };
   interps.push({ label: 'Carbone organique', value: `${soil.soc.toFixed(1)} g/kg`, interpretation: { fr: `SOC ${soil.soc.toFixed(1)} g/kg — ${socLevel.fr}`, en: `SOC ${soil.soc.toFixed(1)} g/kg — ${socLevel.en}` } });
 
-  const cecLevel = soil.cec < 10 ? { fr: 'faible rétention — fractionner les apports d\'engrais (3× minimum)', en: 'low retention — split fertilizer applications (3× minimum)' } :
+  const cecLevel = soil.cec < 10 ? { fr: "faible rétention — fractionner les apports d'engrais (3× minimum)", en: 'low retention — split fertilizer applications (3× minimum)' } :
     soil.cec > 25 ? { fr: 'bonne rétention — 2 apports suffisent', en: 'good retention — 2 applications sufficient' } :
     { fr: 'rétention correcte', en: 'adequate retention' };
   interps.push({ label: 'CEC', value: `${soil.cec.toFixed(1)} cmol/kg`, interpretation: { fr: `CEC ${soil.cec.toFixed(1)} cmol/kg — ${cecLevel.fr}`, en: `CEC ${soil.cec.toFixed(1)} cmol/kg — ${cecLevel.en}` } });
@@ -6440,7 +6440,7 @@ export function runFullAnalysis(
       if (!(climate.annualRainfall > 1000 && wellDistributedRain)) {
         eliminated = true;
         eliminationReason = {
-          fr: 'Culture maraîchère irriguée — pas d\'accès à l\'eau et pluviométrie insuffisante',
+          fr: "Culture maraîchère irriguée — pas d'accès à l\"eau et pluviométrie insuffisante',
           en: 'Irrigated vegetable crop — no water access and insufficient rainfall',
         };
       }
