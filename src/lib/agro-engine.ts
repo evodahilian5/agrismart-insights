@@ -6684,12 +6684,85 @@ export function runFullAnalysis(
     const totalCostPerHa = seedCostPerHa + laborCostPerHa + fertilizerCostPerHa + phytoCostPerHa + transportCostPerHa;
 
     const rate = geo.currencyRate;
+    const sym = geo.currencySymbol;
     const revenueLowUSD = yieldLowPerHa * adjustedPriceUSD;
     const revenueHighUSD = yieldHighPerHa * adjustedPriceUSD;
-    const revenueLow = Math.round(revenueLowUSD * rate * parcelArea);
-    const revenueHigh = Math.round(revenueHighUSD * rate * parcelArea);
-    const costsLow = Math.round(totalCostPerHa * 0.85 * rate * parcelArea);
-    const costsHigh = Math.round(totalCostPerHa * 1.15 * rate * parcelArea);
+
+    // Per-hectare in local currency
+    const revenuePerHaLow = Math.round(revenueLowUSD * rate);
+    const revenuePerHaHigh = Math.round(revenueHighUSD * rate);
+    const costsPerHaLow = Math.round(totalCostPerHa * 0.85 * rate);
+    const costsPerHaHigh = Math.round(totalCostPerHa * 1.15 * rate);
+    const marginPerHaLow = revenuePerHaLow - costsPerHaHigh;
+    const marginPerHaHigh = revenuePerHaHigh - costsPerHaLow;
+
+    // Total for full parcel
+    const revenueLow = Math.round(revenuePerHaLow * parcelArea);
+    const revenueHigh = Math.round(revenuePerHaHigh * parcelArea);
+    const costsLow = Math.round(costsPerHaLow * parcelArea);
+    const costsHigh = Math.round(costsPerHaHigh * parcelArea);
+
+    const costBreakdownPerHa = {
+      seeds: Math.round(seedCostPerHa * rate),
+      labor: Math.round(laborCostPerHa * rate),
+      fertilizer: Math.round(fertilizerCostPerHa * rate),
+      phyto: Math.round(phytoCostPerHa * rate),
+      transport: Math.round(transportCostPerHa * rate),
+    };
+
+    // Economic notes — bilingual descriptive phrases
+    const areaLabel = parcelArea.toFixed(1);
+    const fmtL = (v: number) => v.toLocaleString('fr-FR');
+    const economicNotes = {
+      yield: {
+        fr: `Rendement estimé entre ${yieldLowPerHa.toFixed(1)} et ${yieldHighPerHa.toFixed(1)} t/ha, soit ${yieldLow.toFixed(1)} à ${yieldHigh.toFixed(1)} tonnes sur vos ${areaLabel} ha — basé sur les moyennes FAO EcoCrop et IITA pour cette zone.`,
+        en: `Estimated yield between ${yieldLowPerHa.toFixed(1)} and ${yieldHighPerHa.toFixed(1)} t/ha, i.e. ${yieldLow.toFixed(1)} to ${yieldHigh.toFixed(1)} tons on your ${areaLabel} ha — based on FAO EcoCrop & IITA averages.`,
+      },
+      revenue: {
+        fr: `Revenu brut : ${fmtL(revenuePerHaLow)} – ${fmtL(revenuePerHaHigh)} ${sym}/ha, soit ${fmtL(revenueLow)} – ${fmtL(revenueHigh)} ${sym} pour ${areaLabel} ha. Réf. FAOSTAT 2022-2023 + inflation CIRAD 2026.`,
+        en: `Gross revenue: ${fmtL(revenuePerHaLow)} – ${fmtL(revenuePerHaHigh)} ${sym}/ha, i.e. ${fmtL(revenueLow)} – ${fmtL(revenueHigh)} ${sym} for ${areaLabel} ha. Ref. FAOSTAT 2022-2023 + CIRAD 2026 inflation.`,
+      },
+      costs: {
+        fr: `Coûts : ${fmtL(costsPerHaLow)} – ${fmtL(costsPerHaHigh)} ${sym}/ha (total ${fmtL(costsLow)} – ${fmtL(costsHigh)} ${sym}). Réf. IFDC Africa Fertilizer, enquêtes CIRAD.`,
+        en: `Costs: ${fmtL(costsPerHaLow)} – ${fmtL(costsPerHaHigh)} ${sym}/ha (total ${fmtL(costsLow)} – ${fmtL(costsHigh)} ${sym}). Ref. IFDC Africa Fertilizer, CIRAD surveys.`,
+      },
+      margin: {
+        fr: marginPerHaLow > 0
+          ? `Marge nette positive : ${fmtL(marginPerHaLow)} – ${fmtL(marginPerHaHigh)} ${sym}/ha. Investissement rentable.`
+          : `Marge risquée : ${fmtL(marginPerHaLow)} ${sym}/ha en scénario pessimiste. Envisagez irrigation ou intrants ciblés.`,
+        en: marginPerHaLow > 0
+          ? `Positive net margin: ${fmtL(marginPerHaLow)} – ${fmtL(marginPerHaHigh)} ${sym}/ha. Profitable investment.`
+          : `Risky margin: ${fmtL(marginPerHaLow)} ${sym}/ha worst case. Consider irrigation or targeted inputs.`,
+      },
+      price: {
+        fr: `Prix projeté ${FORECAST_YEAR} : ${fmtL(Math.round(adjustedPriceUSD * rate))} ${sym}/t (${Math.round(adjustedPriceUSD)} USD/t). Source : FAOSTAT + Cyclope/CIRAD.`,
+        en: `Projected ${FORECAST_YEAR} price: ${fmtL(Math.round(adjustedPriceUSD * rate))} ${sym}/t (${Math.round(adjustedPriceUSD)} USD/t). Source: FAOSTAT + Cyclope/CIRAD.`,
+      },
+      seeds: {
+        fr: `Semences : ${fmtL(costBreakdownPerHa.seeds)} ${sym}/ha — ~${crop.seedCostPct}% du revenu (normes FAO/ICRISAT).`,
+        en: `Seeds: ${fmtL(costBreakdownPerHa.seeds)} ${sym}/ha — ~${crop.seedCostPct}% of revenue (FAO/ICRISAT norms).`,
+      },
+      labor: {
+        fr: `Main-d'œuvre : ${fmtL(costBreakdownPerHa.labor)} ${sym}/ha — ${crop.laborPct}% du revenu (préparation, semis, entretien, récolte).`,
+        en: `Labor: ${fmtL(costBreakdownPerHa.labor)} ${sym}/ha — ${crop.laborPct}% of revenue (prep, sowing, weeding, harvest).`,
+      },
+      fertilizer: {
+        fr: fertilizerCostPerHa > 0
+          ? `Engrais : ${fmtL(costBreakdownPerHa.fertilizer)} ${sym}/ha — ${Math.round(fertilizerNeedKg)} kg urée/ha pour compenser le déficit azoté (réf. IFDC Africa).`
+          : `Engrais : aucun besoin supplémentaire — azote suffisant (>60 kg N/ha).`,
+        en: fertilizerCostPerHa > 0
+          ? `Fertilizer: ${fmtL(costBreakdownPerHa.fertilizer)} ${sym}/ha — ${Math.round(fertilizerNeedKg)} kg urea/ha to offset N deficit (ref. IFDC Africa).`
+          : `Fertilizer: no additional need — soil nitrogen sufficient (>60 kg N/ha).`,
+      },
+      phyto: {
+        fr: `Phytosanitaire : ${fmtL(costBreakdownPerHa.phyto)} ${sym}/ha — traitement préventif/curatif (${['vegetables'].includes(crop.category) ? '6,5' : '3'}% du revenu, réf. CIRAD/IITA).`,
+        en: `Phytosanitary: ${fmtL(costBreakdownPerHa.phyto)} ${sym}/ha — preventive/curative (${['vegetables'].includes(crop.category) ? '6.5' : '3'}% of revenue, ref. CIRAD/IITA).`,
+      },
+      transport: {
+        fr: `Transport : ${fmtL(costBreakdownPerHa.transport)} ${sym}/ha — acheminement marché (${Math.round(transportPct * 100)}% du revenu).`,
+        en: `Transport: ${fmtL(costBreakdownPerHa.transport)} ${sym}/ha — market delivery (${Math.round(transportPct * 100)}% of revenue).`,
+      },
+    };
 
     const sowInfo = crop.sowingByZone[zone] || crop.sowingByZone[Object.keys(crop.sowingByZone)[0] as AgroZone];
 
@@ -6722,20 +6795,26 @@ export function runFullAnalysis(
       },
       yieldLow, yieldHigh,
       yieldLowPerHa, yieldHighPerHa,
+      revenuePerHaLow, revenuePerHaHigh,
+      costsPerHaLow, costsPerHaHigh,
+      marginPerHaLow, marginPerHaHigh,
       revenueLow, revenueHigh,
       costsLow, costsHigh,
       marginLow: revenueLow - costsHigh,
       marginHigh: revenueHigh - costsLow,
       costBreakdown: {
-        seeds: Math.round(seedCostPerHa * rate * parcelArea),
-        labor: Math.round(laborCostPerHa * rate * parcelArea),
-        fertilizer: Math.round(fertilizerCostPerHa * rate * parcelArea),
-        phyto: Math.round(phytoCostPerHa * rate * parcelArea),
-        transport: Math.round(transportCostPerHa * rate * parcelArea),
+        seeds: Math.round(costBreakdownPerHa.seeds * parcelArea),
+        labor: Math.round(costBreakdownPerHa.labor * parcelArea),
+        fertilizer: Math.round(costBreakdownPerHa.fertilizer * parcelArea),
+        phyto: Math.round(costBreakdownPerHa.phyto * parcelArea),
+        transport: Math.round(costBreakdownPerHa.transport * parcelArea),
       },
+      costBreakdownPerHa,
       pricePerTon: Math.round(adjustedPriceUSD),
       pricePerTonLocal: Math.round(adjustedPriceUSD * rate),
       forecastYear: FORECAST_YEAR,
+      currencySymbol: sym,
+      economicNotes,
       sowingWindow: sowInfo ? { fr: sowInfo.sow, en: sowInfo.sow } : { fr: '—', en: '—' },
       cycleDays: crop.cycleDays,
       harvestWindow: sowInfo ? { fr: sowInfo.harvest, en: sowInfo.harvest } : { fr: '—', en: '—' },
