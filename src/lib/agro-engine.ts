@@ -6109,7 +6109,7 @@ const ZONE_WEIGHTS: Record<AgroZone, { rain: number; temp: number; ph: number; t
 
 const ZONE_SYSTEM: Record<AgroZone, { fr: string; en: string }> = {
   sahelian: {
-    fr: 'Système Zaï recommandé (microcuvettes de captage d'eau) + intégration de Faidherbia albida (+15 à 30% rendement sans coût d'intrant, CIRAD 2020)',
+    fr: `Système Zaï recommandé (microcuvettes de captage d'eau) + intégration de Faidherbia albida (+15 à 30% rendement sans coût d'intrant, CIRAD 2020)`,
     en: 'Zaï system recommended (micro-basins for water harvesting) + Faidherbia albida integration (+15-30% yield at no input cost, CIRAD 2020)',
   },
   sudanian: {
@@ -6121,11 +6121,11 @@ const ZONE_SYSTEM: Record<AgroZone, { fr: string; en: string }> = {
     en: 'Agroforestry systems integrating fruit trees (mango, avocado) with annual crops to diversify income and protect soil',
   },
   mediterranean: {
-    fr: 'Association olivier + légumineuses annuelles d'hiver (pois chiche, fève) pour optimiser l'occupation du sol',
+    fr: `Association olivier + légumineuses annuelles d'hiver (pois chiche, fève) pour optimiser l'occupation du sol`,
     en: 'Olive + winter annual legumes (chickpea, fava) association to optimize land use',
   },
   mountain_med: {
-    fr: 'Terrasses en courbes de niveau + cultures adaptées à l'altitude avec légumineuses fixatrices d'azote',
+    fr: `Terrasses en courbes de niveau + cultures adaptées à l'altitude avec légumineuses fixatrices d'azote`,
     en: 'Level-curve terraces + altitude-adapted crops with nitrogen-fixing legumes',
   },
 };
@@ -6440,7 +6440,7 @@ export function runFullAnalysis(
       if (!(climate.annualRainfall > 1000 && wellDistributedRain)) {
         eliminated = true;
         eliminationReason = {
-          fr: 'Culture maraîchère irriguée — pas d'accès à l'eau et pluviométrie insuffisante',
+          fr: `Culture maraîchère irriguée — pas d'accès à l'eau et pluviométrie insuffisante`,
           en: 'Irrigated vegetable crop — no water access and insufficient rainfall',
         };
       }
