@@ -809,40 +809,60 @@ export default function SoilAnalysis() {
                         <div className="mt-2 space-y-3">
                           {/* Radar */}
                           <div className="rounded-xl border border-border bg-card p-4">
-                            <ResponsiveContainer width="100%" height={220}>
+                            <ResponsiveContainer width="100%" height={300}>
                               <RadarChart data={[
                                 { axis: 'pH', score: crop.subScores.ph },
                                 { axis: 'Texture', score: crop.subScores.texture },
-                                { axis: lang === 'fr' ? 'Temp.' : 'Temp.', score: crop.subScores.temp },
+                                { axis: 'Temp.', score: crop.subScores.temp },
                                 { axis: lang === 'fr' ? 'Pluie' : 'Rain', score: crop.subScores.rain },
                                 { axis: lang === 'fr' ? 'Azote' : 'N', score: crop.subScores.nitrogen },
+                                { axis: 'CEC', score: crop.subScores.cec },
+                                { axis: 'SOC', score: crop.subScores.soc },
+                                { axis: lang === 'fr' ? 'Humid.' : 'Humid.', score: crop.subScores.humidity },
+                                { axis: 'Solar', score: crop.subScores.solar },
+                                { axis: lang === 'fr' ? 'Bilan eau' : 'Water bal.', score: crop.subScores.waterBalance },
+                                { axis: 'Altitude', score: crop.subScores.altitude },
+                                { axis: lang === 'fr' ? 'Cailloux' : 'Stones', score: crop.subScores.cfvo },
+                                { axis: lang === 'fr' ? 'Densité' : 'Density', score: crop.subScores.bdod },
+                                { axis: lang === 'fr' ? 'Limon' : 'Silt', score: crop.subScores.silt },
+                                { axis: 'Δ Therm.', score: crop.subScores.thermalAmp },
                               ]}>
                                 <PolarGrid stroke="hsl(var(--border))" />
-                                <PolarAngleAxis dataKey="axis" tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }} />
-                                <PolarRadiusAxis domain={[0, 100]} tick={{ fontSize: 8 }} />
+                                <PolarAngleAxis dataKey="axis" tick={{ fontSize: 8, fill: 'hsl(var(--muted-foreground))' }} />
+                                <PolarRadiusAxis domain={[0, 100]} tick={{ fontSize: 7 }} />
                                 <Radar dataKey="score" stroke="hsl(var(--primary))" fill="hsl(var(--primary))" fillOpacity={0.25} />
                               </RadarChart>
                             </ResponsiveContainer>
-                            <div className="flex flex-wrap gap-2 mt-2">
+                            <div className="flex flex-wrap gap-1.5 mt-2">
                               {crop.radarLegend.map(l => (
-                                <span key={l.axis} className={`text-[10px] px-2 py-0.5 rounded-full ${
+                                <span key={l.axis} className={`text-[9px] px-1.5 py-0.5 rounded-full ${
                                   l.status === 'favorable' ? 'bg-primary/20 text-primary' :
                                   l.status === 'limite' ? 'bg-gold/20 text-gold' :
                                   'bg-destructive/20 text-destructive'
                                 }`}>
-                                  {l.axis}: {l.status === 'favorable' ? '✓' : l.status === 'limite' ? '~' : '✗'} {l.status}
+                                  {l.axis}: {l.status === 'favorable' ? '✓' : l.status === 'limite' ? '~' : '✗'}
                                 </span>
                               ))}
                             </div>
                           </div>
 
-                          {/* Sub-scores as cards */}
-                          <div className="grid grid-cols-5 gap-2">
+                          {/* Sub-scores grid — 15 parameters */}
+                          <div className="grid grid-cols-3 sm:grid-cols-5 gap-2">
                             <SoilCard label="pH" value={`${crop.subScores.ph}`} unit="/100" interp="" />
                             <SoilCard label="Texture" value={`${crop.subScores.texture}`} unit="/100" interp="" />
                             <SoilCard label={lang === 'fr' ? 'Temp.' : 'Temp.'} value={`${crop.subScores.temp}`} unit="/100" interp="" />
                             <SoilCard label={lang === 'fr' ? 'Pluie' : 'Rain'} value={`${crop.subScores.rain}`} unit="/100" interp="" />
                             <SoilCard label={lang === 'fr' ? 'Azote' : 'N'} value={`${crop.subScores.nitrogen}`} unit="/100" interp="" />
+                            <SoilCard label="CEC" value={`${crop.subScores.cec}`} unit="/100" interp="" />
+                            <SoilCard label="SOC" value={`${crop.subScores.soc}`} unit="/100" interp="" />
+                            <SoilCard label={lang === 'fr' ? 'Humidité' : 'Humidity'} value={`${crop.subScores.humidity}`} unit="/100" interp="" />
+                            <SoilCard label="Solar" value={`${crop.subScores.solar}`} unit="/100" interp="" />
+                            <SoilCard label={lang === 'fr' ? 'Bilan eau' : 'Water'} value={`${crop.subScores.waterBalance}`} unit="/100" interp="" />
+                            <SoilCard label="Altitude" value={`${crop.subScores.altitude}`} unit="/100" interp="" />
+                            <SoilCard label={lang === 'fr' ? 'Cailloux' : 'Stones'} value={`${crop.subScores.cfvo}`} unit="/100" interp="" />
+                            <SoilCard label={lang === 'fr' ? 'Densité' : 'Density'} value={`${crop.subScores.bdod}`} unit="/100" interp="" />
+                            <SoilCard label={lang === 'fr' ? 'Limon' : 'Silt'} value={`${crop.subScores.silt}`} unit="/100" interp="" />
+                            <SoilCard label="Δ Therm." value={`${crop.subScores.thermalAmp}`} unit="/100" interp="" />
                           </div>
 
                           {/* Input recs */}
