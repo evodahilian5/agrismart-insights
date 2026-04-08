@@ -6596,25 +6596,32 @@ export function runFullAnalysis(
       eliminationReason = { fr: 'Culture à enracinement profond — semelle de labour détectée', en: 'Deep-rooted crop — plow pan detected' };
     }
 
-    // Calculate sub-scores
+    // Calculate all 15 sub-scores
     const phScore = calcPhScore(soil.ph, crop.phOpt, crop.phTol);
     const rainScore = calcRainScore(climate.annualRainfall, climate.deficitMonths, crop, zone);
     const tempScore = calcTempScore(climate.correctedTemp, crop.tempOpt, crop.tempTol);
     const textureScore = calcTextureScore(soil.clay, soil.sand, crop);
     const nitrogenScore = calcNitrogenScore(soil.nitrogenKgHa);
+    const cecScore = calcCecScore(soil.cec, crop);
+    const socScore = calcSocScore(soil.soc);
+    const humidityScore = calcHumidityScore(climate.annualHumidity, crop);
+    const solarScore = calcSolarScore(climate.annualSolarRadiation, crop);
+    const waterBalanceScore = calcWaterBalanceScore(climate.deficitMonths, climate.wetMonths, crop);
+    const altitudeScore = calcAltitudeScore(climate.altitude, crop);
+    const cfvoScore = calcCfvoScore(soil.cfvo, crop);
+    const bdodScore = calcBdodScore(soil.bdod, crop);
+    const siltScore = calcSiltScore(soil.silt, crop);
+    const thermalAmpScore = calcThermalAmpScore(climate.coldestMonthTemp, climate.hottestMonthTemp, crop);
 
-    // Weighted score
+    // Weighted score using all 15 parameters
     let score = Math.round(
       (phScore * weights.ph + rainScore * weights.rain + tempScore * weights.temp +
-       textureScore * weights.texture + nitrogenScore * weights.nitrogen) / 100
+       textureScore * weights.texture + nitrogenScore * weights.nitrogen +
+       cecScore * weights.cec + socScore * weights.soc + humidityScore * weights.humidity +
+       solarScore * weights.solar + waterBalanceScore * weights.waterBalance +
+       altitudeScore * weights.altitude + cfvoScore * weights.cfvo + bdodScore * weights.bdod +
+       siltScore * weights.silt + thermalAmpScore * weights.thermalAmp) / 100
     );
-
-    // SOC adjustments
-    if (soil.soc < 5) score = Math.max(0, score - 15);
-    if (soil.soc > 20) score = Math.min(100, Math.round(score * 1.05));
-
-    // Sunshine penalty for photosensitive crops
-    if (crop.isPhotosensitive && climate.annualSolarRadiation < 15) score = Math.max(0, score - 10);
 
     // Mediterranean: exclude tropical crops in summer-dry season
     if (zone === 'mediterranean' && crop.category === 'tubers') score = Math.max(0, score - 30);
@@ -6624,9 +6631,8 @@ export function runFullAnalysis(
     const grade: Grade = score >= 75 ? 'excellent' : score >= 55 ? 'bon' : score >= 35 ? 'moyen' : 'deconseille';
 
     // Economics — 2026 projections based on FAOSTAT 2022-2023 + CIRAD price trend index
-    // CIRAD/Cyclope 2024: +3-8% annual price increase for African commodities (inflation + demand)
     const FORECAST_YEAR = 2026;
-    const PRICE_INFLATION_FACTOR = 1.12; // cumulative 2023→2026 (~3.8%/yr, CIRAD Cyclope, FAO AMIS)
+    const PRICE_INFLATION_FACTOR = 1.12;
     const adjustedPriceUSD = crop.priceUSD * PRICE_INFLATION_FACTOR;
 
     const zoneYields = crop.yields[zone] || crop.yields[Object.keys(crop.yields)[0] as AgroZone] || [0.5, 1.0];
@@ -6636,18 +6642,14 @@ export function runFullAnalysis(
     const yieldLow = Math.round(yieldLowPerHa * parcelArea * 100) / 100;
     const yieldHigh = Math.round(yieldHighPerHa * parcelArea * 100) / 100;
 
-    // Detailed cost breakdown per hectare (USD) — sources: CIRAD 2023, IITA, AfricaRice
     const avgYieldPerHa = (yieldLowPerHa + yieldHighPerHa) / 2;
     const avgRevenuePerHa = avgYieldPerHa * adjustedPriceUSD;
     const seedCostPerHa = avgRevenuePerHa * crop.seedCostPct / 100;
     const laborCostPerHa = avgRevenuePerHa * crop.laborPct / 100;
-    // Fertilizer: based on actual soil deficit
     const fertilizerNeedKg = soil.nitrogenKgHa < 60 ? Math.max(0, 60 - soil.nitrogenKgHa) / 0.46 : 0;
-    const fertilizerCostPerHa = fertilizerNeedKg * 0.6; // ~0.6 USD/kg urea (IFDC Africa 2024)
-    // Phytosanitary: 5-8% of revenue for vegetables, 2-4% for cereals/legumes
+    const fertilizerCostPerHa = fertilizerNeedKg * 0.6;
     const phytoPct = ['vegetables'].includes(crop.category) ? 0.065 : 0.03;
     const phytoCostPerHa = avgRevenuePerHa * phytoPct;
-    // Transport/post-harvest: 5-10% depending on perishability
     const transportPct = crop.isTuber || ['vegetables'].includes(crop.category) ? 0.08 : 0.05;
     const transportCostPerHa = avgRevenuePerHa * transportPct;
 
@@ -6661,21 +6663,35 @@ export function runFullAnalysis(
     const costsLow = Math.round(totalCostPerHa * 0.85 * rate * parcelArea);
     const costsHigh = Math.round(totalCostPerHa * 1.15 * rate * parcelArea);
 
-    // Sowing info
     const sowInfo = crop.sowingByZone[zone] || crop.sowingByZone[Object.keys(crop.sowingByZone)[0] as AgroZone];
 
-    // Radar legend
+    // Radar legend (15 axes)
+    const mkStatus = (s: number) => s >= 75 ? 'favorable' as const : s >= 50 ? 'limite' as const : 'problematique' as const;
     const radarLegend = [
-      { axis: 'pH', status: phScore >= 75 ? 'favorable' as const : phScore >= 50 ? 'limite' as const : 'problematique' as const },
-      { axis: 'Texture', status: textureScore >= 75 ? 'favorable' as const : textureScore >= 50 ? 'limite' as const : 'problematique' as const },
-      { axis: 'Température', status: tempScore >= 75 ? 'favorable' as const : tempScore >= 50 ? 'limite' as const : 'problematique' as const },
-      { axis: 'Pluie', status: rainScore >= 75 ? 'favorable' as const : rainScore >= 50 ? 'limite' as const : 'problematique' as const },
-      { axis: 'Azote', status: nitrogenScore >= 75 ? 'favorable' as const : nitrogenScore >= 50 ? 'limite' as const : 'problematique' as const },
+      { axis: 'pH', status: mkStatus(phScore) },
+      { axis: 'Texture', status: mkStatus(textureScore) },
+      { axis: 'Temp.', status: mkStatus(tempScore) },
+      { axis: 'Pluie', status: mkStatus(rainScore) },
+      { axis: 'Azote', status: mkStatus(nitrogenScore) },
+      { axis: 'CEC', status: mkStatus(cecScore) },
+      { axis: 'SOC', status: mkStatus(socScore) },
+      { axis: 'Humid.', status: mkStatus(humidityScore) },
+      { axis: 'Solar', status: mkStatus(solarScore) },
+      { axis: 'Bilan eau', status: mkStatus(waterBalanceScore) },
+      { axis: 'Altitude', status: mkStatus(altitudeScore) },
+      { axis: 'Cailloux', status: mkStatus(cfvoScore) },
+      { axis: 'Densité', status: mkStatus(bdodScore) },
+      { axis: 'Limon', status: mkStatus(siltScore) },
+      { axis: 'Δ Therm.', status: mkStatus(thermalAmpScore) },
     ];
 
     allScores.push({
       key, name: crop.name, category: crop.category, score, grade,
-      subScores: { ph: phScore, texture: textureScore, temp: tempScore, rain: rainScore, nitrogen: nitrogenScore },
+      subScores: {
+        ph: phScore, texture: textureScore, temp: tempScore, rain: rainScore, nitrogen: nitrogenScore,
+        cec: cecScore, soc: socScore, humidity: humidityScore, solar: solarScore, waterBalance: waterBalanceScore,
+        altitude: altitudeScore, cfvo: cfvoScore, bdod: bdodScore, silt: siltScore, thermalAmp: thermalAmpScore,
+      },
       yieldLow, yieldHigh,
       yieldLowPerHa, yieldHighPerHa,
       revenueLow, revenueHigh,
