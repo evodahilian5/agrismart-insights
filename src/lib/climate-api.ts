@@ -33,7 +33,7 @@ export interface GeoLocation {
 }
 
 const CURRENCY_MAP: Record<string, { currency: string; symbol: string; rate: number }> = {
-  MA: { currency: 'MAD', symbol: 'MAD', rate: 10 },
+  // Afrique de l'Ouest — Zone FCFA (BCEAO) — Taux fixe 1 USD ≈ 655 FCFA (parité EUR)
   SN: { currency: 'FCFA', symbol: 'FCFA', rate: 655 },
   ML: { currency: 'FCFA', symbol: 'FCFA', rate: 655 },
   NE: { currency: 'FCFA', symbol: 'FCFA', rate: 655 },
@@ -42,15 +42,52 @@ const CURRENCY_MAP: Record<string, { currency: string; symbol: string; rate: num
   BJ: { currency: 'FCFA', symbol: 'FCFA', rate: 655 },
   CI: { currency: 'FCFA', symbol: 'FCFA', rate: 655 },
   GW: { currency: 'FCFA', symbol: 'FCFA', rate: 655 },
-  GH: { currency: 'GHS', symbol: 'GH₵', rate: 15 },
-  NG: { currency: 'NGN', symbol: '₦', rate: 1600 },
+  // Afrique Centrale — Zone FCFA (BEAC)
   CM: { currency: 'FCFA', symbol: 'FCFA', rate: 655 },
   TD: { currency: 'FCFA', symbol: 'FCFA', rate: 655 },
   CF: { currency: 'FCFA', symbol: 'FCFA', rate: 655 },
   GA: { currency: 'FCFA', symbol: 'FCFA', rate: 655 },
   CG: { currency: 'FCFA', symbol: 'FCFA', rate: 655 },
+  GQ: { currency: 'FCFA', symbol: 'FCFA', rate: 655 },
+  // Afrique de l'Ouest — Monnaies propres
+  GH: { currency: 'GHS', symbol: 'GH₵', rate: 15.5 },
+  NG: { currency: 'NGN', symbol: '₦', rate: 1600 },
   GN: { currency: 'GNF', symbol: 'GNF', rate: 8600 },
+  SL: { currency: 'SLE', symbol: 'Le', rate: 22.5 },
+  LR: { currency: 'LRD', symbol: 'L$', rate: 192 },
+  GM: { currency: 'GMD', symbol: 'D', rate: 68 },
+  CV: { currency: 'CVE', symbol: '$', rate: 110 },
+  // Afrique du Nord
+  MA: { currency: 'MAD', symbol: 'MAD', rate: 10.2 },
+  DZ: { currency: 'DZD', symbol: 'DA', rate: 135 },
+  TN: { currency: 'TND', symbol: 'DT', rate: 3.15 },
+  EG: { currency: 'EGP', symbol: 'E£', rate: 50 },
+  LY: { currency: 'LYD', symbol: 'LD', rate: 4.85 },
+  // Afrique de l'Est
+  KE: { currency: 'KES', symbol: 'KSh', rate: 155 },
+  TZ: { currency: 'TZS', symbol: 'TSh', rate: 2650 },
+  UG: { currency: 'UGX', symbol: 'USh', rate: 3800 },
+  ET: { currency: 'ETB', symbol: 'Br', rate: 57 },
+  RW: { currency: 'RWF', symbol: 'RF', rate: 1300 },
+  BI: { currency: 'BIF', symbol: 'FBu', rate: 2850 },
+  // Afrique Australe
+  ZA: { currency: 'ZAR', symbol: 'R', rate: 18.5 },
+  MZ: { currency: 'MZN', symbol: 'MT', rate: 63 },
+  ZM: { currency: 'ZMW', symbol: 'ZK', rate: 27 },
+  MW: { currency: 'MWK', symbol: 'MK', rate: 1700 },
+  ZW: { currency: 'ZWL', symbol: 'Z$', rate: 14000 },
+  // Autres
   MR: { currency: 'MRU', symbol: 'MRU', rate: 40 },
+  MG: { currency: 'MGA', symbol: 'Ar', rate: 4550 },
+  CD: { currency: 'CDF', symbol: 'FC', rate: 2750 },
+  AO: { currency: 'AOA', symbol: 'Kz', rate: 830 },
+  // Europe (pour les utilisateurs européens)
+  FR: { currency: 'EUR', symbol: '€', rate: 0.92 },
+  BE: { currency: 'EUR', symbol: '€', rate: 0.92 },
+  DE: { currency: 'EUR', symbol: '€', rate: 0.92 },
+  ES: { currency: 'EUR', symbol: '€', rate: 0.92 },
+  PT: { currency: 'EUR', symbol: '€', rate: 0.92 },
+  IT: { currency: 'EUR', symbol: '€', rate: 0.92 },
 };
 
 const COAST_POINTS = [
