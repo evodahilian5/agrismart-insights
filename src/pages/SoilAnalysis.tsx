@@ -882,34 +882,70 @@ export default function SoilAnalysis() {
                           <div className="rounded-xl border border-border bg-card p-4">
                             <h4 className="text-sm font-bold text-foreground mb-3 flex items-center gap-2">
                               <TrendingUp className="w-4 h-4 text-primary" />
-                              {lang === 'fr' ? `Estimation économique ${crop.forecastYear}` : `Economic estimate ${crop.forecastYear}`}
+                              {lang === 'fr' ? `Estimation économique ${crop.forecastYear} — ${area.toFixed(1)} ha` : `Economic estimate ${crop.forecastYear} — ${area.toFixed(1)} ha`}
                             </h4>
-                            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 mb-3">
-                              <SoilCard label={lang === 'fr' ? 'Rendement/ha' : 'Yield/ha'} value={`${crop.yieldLowPerHa.toFixed(1)} — ${crop.yieldHighPerHa.toFixed(1)}`} unit="t/ha" interp="" />
-                              <SoilCard label={lang === 'fr' ? `Production totale (${area.toFixed(1)} ha)` : `Total output (${area.toFixed(1)} ha)`} value={`${crop.yieldLow.toFixed(1)} — ${crop.yieldHigh.toFixed(1)}`} unit="t" interp="" />
-                              <SoilCard label={lang === 'fr' ? 'Prix/tonne' : 'Price/ton'} value={`${crop.pricePerTonLocal.toLocaleString('fr-FR')}`} unit={geo.currencySymbol} interp={`${crop.pricePerTon} USD/t`} />
-                              <SoilCard label={lang === 'fr' ? 'Revenu brut' : 'Revenue'} value={fmtCur(crop.revenueLow, geo)} unit={`→ ${fmtCur(crop.revenueHigh, geo)}`} interp="" />
-                              <SoilCard label={lang === 'fr' ? 'Coûts totaux' : 'Total costs'} value={fmtCur(crop.costsLow, geo)} unit={`→ ${fmtCur(crop.costsHigh, geo)}`} interp="" />
-                              <SoilCard label={lang === 'fr' ? 'Marge nette' : 'Net margin'} value={fmtCur(crop.marginLow, geo)} unit={`→ ${fmtCur(crop.marginHigh, geo)}`}
-                                interp={crop.marginLow > 0 ? '🟢' : '🔴'} />
+
+                            {/* Per-hectare section */}
+                            <div className="mb-3">
+                              <div className="text-[10px] font-bold text-primary uppercase tracking-wider mb-1.5">
+                                {lang === 'fr' ? '📐 Par hectare' : '📐 Per hectare'}
+                              </div>
+                              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 mb-1">
+                                <SoilCard label={lang === 'fr' ? 'Rendement/ha' : 'Yield/ha'} value={`${crop.yieldLowPerHa.toFixed(1)} — ${crop.yieldHighPerHa.toFixed(1)}`} unit="t/ha" interp="" />
+                                <SoilCard label={lang === 'fr' ? 'Revenu brut/ha' : 'Revenue/ha'} value={fmtCur(crop.revenuePerHaLow, geo)} unit={`→ ${fmtCur(crop.revenuePerHaHigh, geo)}`} interp="" />
+                                <SoilCard label={lang === 'fr' ? 'Coûts/ha' : 'Costs/ha'} value={fmtCur(crop.costsPerHaLow, geo)} unit={`→ ${fmtCur(crop.costsPerHaHigh, geo)}`} interp="" />
+                                <SoilCard label={lang === 'fr' ? 'Marge nette/ha' : 'Net margin/ha'} value={fmtCur(crop.marginPerHaLow, geo)} unit={`→ ${fmtCur(crop.marginPerHaHigh, geo)}`}
+                                  interp={crop.marginPerHaLow > 0 ? '🟢' : '🔴'} />
+                                <SoilCard label={lang === 'fr' ? 'Prix/tonne' : 'Price/ton'} value={`${crop.pricePerTonLocal.toLocaleString('fr-FR')}`} unit={geo.currencySymbol} interp={`${crop.pricePerTon} USD/t`} />
+                              </div>
+                              <p className="text-[9px] text-muted-foreground italic mt-1">{crop.economicNotes.price[lang]}</p>
                             </div>
-                            {/* Cost breakdown */}
+
+                            {/* Total parcel section */}
+                            <div className="mb-3">
+                              <div className="text-[10px] font-bold text-primary uppercase tracking-wider mb-1.5">
+                                {lang === 'fr' ? `🌾 Total parcelle (${area.toFixed(1)} ha)` : `🌾 Total plot (${area.toFixed(1)} ha)`}
+                              </div>
+                              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 mb-1">
+                                <SoilCard label={lang === 'fr' ? 'Production totale' : 'Total output'} value={`${crop.yieldLow.toFixed(1)} — ${crop.yieldHigh.toFixed(1)}`} unit="t" interp="" />
+                                <SoilCard label={lang === 'fr' ? 'Revenu brut total' : 'Total revenue'} value={fmtCur(crop.revenueLow, geo)} unit={`→ ${fmtCur(crop.revenueHigh, geo)}`} interp="" />
+                                <SoilCard label={lang === 'fr' ? 'Coûts totaux' : 'Total costs'} value={fmtCur(crop.costsLow, geo)} unit={`→ ${fmtCur(crop.costsHigh, geo)}`} interp="" />
+                                <SoilCard label={lang === 'fr' ? 'Marge nette totale' : 'Total net margin'} value={fmtCur(crop.marginLow, geo)} unit={`→ ${fmtCur(crop.marginHigh, geo)}`}
+                                  interp={crop.marginLow > 0 ? '🟢' : '🔴'} />
+                              </div>
+                              <p className="text-[9px] text-muted-foreground italic mt-1">{crop.economicNotes.revenue[lang]}</p>
+                              <p className="text-[9px] text-muted-foreground italic">{crop.economicNotes.margin[lang]}</p>
+                            </div>
+
+                            {/* Cost breakdown with notes */}
                             <div className="rounded-lg bg-secondary/30 p-3">
                               <div className="text-[10px] font-bold text-foreground mb-2 uppercase tracking-wider">
-                                {lang === 'fr' ? 'Décomposition des coûts' : 'Cost breakdown'}
+                                {lang === 'fr' ? 'Décomposition des coûts (par ha → total)' : 'Cost breakdown (per ha → total)'}
                               </div>
-                              <div className="grid grid-cols-2 sm:grid-cols-5 gap-1.5">
-                                <SoilCard label={lang === 'fr' ? 'Semences' : 'Seeds'} value={fmtCur(crop.costBreakdown.seeds, geo)} unit="" interp="" />
-                                <SoilCard label={lang === 'fr' ? 'Main d\'œuvre' : 'Labor'} value={fmtCur(crop.costBreakdown.labor, geo)} unit="" interp="" />
-                                <SoilCard label={lang === 'fr' ? 'Engrais' : 'Fertilizer'} value={fmtCur(crop.costBreakdown.fertilizer, geo)} unit="" interp="" />
-                                <SoilCard label={lang === 'fr' ? 'Phytosanitaire' : 'Phytosanitary'} value={fmtCur(crop.costBreakdown.phyto, geo)} unit="" interp="" />
-                                <SoilCard label="Transport" value={fmtCur(crop.costBreakdown.transport, geo)} unit="" interp="" />
+                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                {[
+                                  { key: 'seeds' as const, labelFr: 'Semences', labelEn: 'Seeds' },
+                                  { key: 'labor' as const, labelFr: "Main d'œuvre", labelEn: 'Labor' },
+                                  { key: 'fertilizer' as const, labelFr: 'Engrais', labelEn: 'Fertilizer' },
+                                  { key: 'phyto' as const, labelFr: 'Phytosanitaire', labelEn: 'Phytosanitary' },
+                                  { key: 'transport' as const, labelFr: 'Transport', labelEn: 'Transport' },
+                                ].map(item => (
+                                  <div key={item.key} className="rounded-md bg-background/60 p-2">
+                                    <div className="flex justify-between items-center mb-0.5">
+                                      <span className="text-[10px] font-semibold text-foreground">{lang === 'fr' ? item.labelFr : item.labelEn}</span>
+                                      <span className="text-[10px] font-bold text-primary">
+                                        {fmtCur(crop.costBreakdownPerHa[item.key], geo)}/ha → {fmtCur(crop.costBreakdown[item.key], geo)}
+                                      </span>
+                                    </div>
+                                    <p className="text-[8px] text-muted-foreground leading-tight">{crop.economicNotes[item.key][lang]}</p>
+                                  </div>
+                                ))}
                               </div>
                             </div>
                             <p className="text-[9px] text-muted-foreground mt-2">
                               {lang === 'fr'
-                                ? `Source : FAOSTAT 2022-2023 + indice d'inflation CIRAD/Cyclope 2024 projeté ${crop.forecastYear}. Prix ajustés IFDC Africa, AfricaRice, IITA.`
-                                : `Source: FAOSTAT 2022-2023 + CIRAD/Cyclope 2024 inflation index projected ${crop.forecastYear}. Prices adjusted IFDC Africa, AfricaRice, IITA.`}
+                                ? `Sources : FAOSTAT 2022-2023, indice Cyclope/CIRAD 2024 projeté ${crop.forecastYear}, IFDC Africa Fertilizer, AfricaRice, IITA, ICRISAT. Monnaie locale : ${geo.currency} (1 USD ≈ ${geo.currencyRate} ${geo.currencySymbol}).`
+                                : `Sources: FAOSTAT 2022-2023, Cyclope/CIRAD 2024 index projected ${crop.forecastYear}, IFDC Africa Fertilizer, AfricaRice, IITA, ICRISAT. Local currency: ${geo.currency} (1 USD ≈ ${geo.currencyRate} ${geo.currencySymbol}).`}
                             </p>
                           </div>
 
