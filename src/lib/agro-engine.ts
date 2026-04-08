@@ -43,7 +43,11 @@ export interface CropScore {
   category: string;
   score: number;
   grade: Grade;
-  subScores: { ph: number; texture: number; temp: number; rain: number; nitrogen: number };
+  subScores: {
+    ph: number; texture: number; temp: number; rain: number; nitrogen: number;
+    cec: number; soc: number; humidity: number; solar: number; waterBalance: number;
+    altitude: number; cfvo: number; bdod: number; silt: number; thermalAmp: number;
+  };
   yieldLow: number;
   yieldHigh: number;
   yieldLowPerHa: number;
