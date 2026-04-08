@@ -23,18 +23,52 @@ interface LatLngPoint { lat: number; lng: number; }
 
 // ─── LEAFLET MAP ─────────────────────────────────────────────────────────────
 
-function LeafletMap({ positions, setPositions, center }: { positions: LatLngPoint[]; setPositions: (p: LatLngPoint[]) => void; center: [number, number] }) {
+function LeafletMap({ positions, setPositions, center, onSearchNav }: { positions: LatLngPoint[]; setPositions: (p: LatLngPoint[]) => void; center: [number, number]; onSearchNav?: (lat: number, lng: number, label: string) => void }) {
   const mapRef = useRef<L.Map | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const polygonRef = useRef<L.Polygon | null>(null);
   const markersRef = useRef<L.CircleMarker[]>([]);
   const positionsRef = useRef(positions);
   const hasCenteredRef = useRef(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState<any[]>([]);
+  const [searching, setSearching] = useState(false);
   positionsRef.current = positions;
+
+  const searchLocation = async () => {
+    if (!searchQuery.trim()) return;
+    setSearching(true);
+    try {
+      const resp = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(searchQuery)}&limit=5&accept-language=fr`, {
+        headers: { 'User-Agent': 'AgriSmartConnect/1.0' },
+      });
+      if (resp.ok) {
+        const results = await resp.json();
+        setSearchResults(results);
+      }
+    } catch (err) {
+      console.warn('Search failed:', err);
+    } finally {
+      setSearching(false);
+    }
+  };
+
+  const goToResult = (result: any) => {
+    const lat = parseFloat(result.lat);
+    const lng = parseFloat(result.lon);
+    const map = mapRef.current;
+    if (map) {
+      map.setView([lat, lng], 14);
+    }
+    setSearchResults([]);
+    setSearchQuery(result.display_name?.split(',')[0] || '');
+    onSearchNav?.(lat, lng, result.display_name || '');
+  };
 
   useEffect(() => {
     if (!containerRef.current || mapRef.current) return;
-    const map = L.map(containerRef.current, { scrollWheelZoom: true }).setView(center, 13);
+    // Default: Africa overview
+    const map = L.map(containerRef.current, { scrollWheelZoom: true }).setView(center, positions.length > 0 ? 13 : 4);
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '© OpenStreetMap' }).addTo(map);
     mapRef.current = map;
     map.on('click', (e: L.LeafletMouseEvent) => {
@@ -68,7 +102,39 @@ function LeafletMap({ positions, setPositions, center }: { positions: LatLngPoin
     }
   }, [positions]);
 
-  return <div ref={containerRef} className="w-full h-full rounded-xl" />;
+  return (
+    <div className="relative w-full h-full">
+      {/* Search bar overlay */}
+      <div className="absolute top-2 left-2 right-2 z-[1000]">
+        <div className="flex gap-1">
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={e => setSearchQuery(e.target.value)}
+            onKeyDown={e => e.key === 'Enter' && searchLocation()}
+            placeholder="🔍 Rechercher une zone (ex: Lomé, Marrakech, Dakar...)"
+            className="flex-1 px-3 py-2 rounded-lg bg-background/95 backdrop-blur border border-border text-sm text-foreground shadow-lg outline-none focus:ring-2 focus:ring-primary/50"
+          />
+          <button onClick={searchLocation} disabled={searching}
+            className="px-3 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-semibold shadow-lg hover:opacity-90 disabled:opacity-50">
+            {searching ? <Loader2 className="w-4 h-4 animate-spin" /> : <MapPin className="w-4 h-4" />}
+          </button>
+        </div>
+        {searchResults.length > 0 && (
+          <div className="mt-1 bg-background/95 backdrop-blur border border-border rounded-lg shadow-lg overflow-hidden max-h-48 overflow-y-auto">
+            {searchResults.map((r, i) => (
+              <button key={i} onClick={() => goToResult(r)}
+                className="w-full text-left px-3 py-2 text-sm text-foreground hover:bg-primary/10 border-b border-border/50 last:border-0">
+                <div className="font-medium">{r.display_name?.split(',').slice(0, 3).join(', ')}</div>
+                <div className="text-[10px] text-muted-foreground">{r.type} · {r.display_name?.split(',').slice(-2).join(',')}</div>
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+      <div ref={containerRef} className="w-full h-full rounded-xl" />
+    </div>
+  );
 }
 
 function calculateArea(positions: LatLngPoint[]): number {
@@ -186,7 +252,7 @@ export default function SoilAnalysis() {
   const area = calculateArea(positions);
   const center: [number, number] = positions.length > 0
     ? [positions.reduce((s, p) => s + p.lat, 0) / positions.length, positions.reduce((s, p) => s + p.lng, 0) / positions.length]
-    : userLocation || [7.5, 2.5];
+    : userLocation || [10, 10]; // Africa center
   const monthLabels = lang === 'fr' ? MONTH_LABELS_FR : MONTH_LABELS_EN;
 
   const analyze = async () => {
@@ -412,7 +478,9 @@ export default function SoilAnalysis() {
             <div className="grid lg:grid-cols-3 gap-4 mb-6">
               <div className="lg:col-span-2">
                 <div className="rounded-2xl border border-border bg-card p-1.5 h-[400px] sm:h-[450px] relative">
-                  <LeafletMap positions={positions} setPositions={setPositions} center={center} />
+                  <LeafletMap positions={positions} setPositions={setPositions} center={center} onSearchNav={(lat, lng) => {
+                    // Optionally add the searched location as the first point
+                  }} />
                 </div>
               </div>
               <div className="space-y-3">
