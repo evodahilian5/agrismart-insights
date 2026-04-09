@@ -272,11 +272,16 @@ serve(async (req) => {
     // 1. Try SoilGrids (primary)
     const sgResult = await trySoilGrids(lat, lon);
     if (sgResult?.data) {
-      console.log('SoilGrids success');
       const soil = buildSoilGridsResponse(sgResult.data);
-      return new Response(JSON.stringify(soil), {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
+      // Validate: if all key values are 0, SoilGrids had no data for this point
+      if (soil.ph > 0 && (soil.clay > 0 || soil.sand > 0)) {
+        console.log('SoilGrids success — valid data');
+        return new Response(JSON.stringify(soil), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      } else {
+        console.log('SoilGrids returned empty/null values, falling back...');
+      }
     }
 
     console.log('SoilGrids failed, trying OpenLandMap...');

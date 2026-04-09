@@ -41,9 +41,12 @@ export async function fetchSoilData(lat: number, lon: number): Promise<SoilData>
       
       if (resp.ok) {
         const soil = await resp.json();
-        if (soil && soil.ph !== undefined) {
+        // Validate: if ph and textures are all 0, SoilGrids had no data — fall through to fallbacks
+        if (soil && soil.ph !== undefined && soil.ph > 0 && (soil.clay > 0 || soil.sand > 0)) {
           console.log('Edge function success, source:', soil.source);
           return { ...soil, isReal: true };
+        } else {
+          console.warn('Edge function returned empty soil data, using fallback...');
         }
       } else {
         console.warn('Edge function response not OK:', resp.status);
